@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Clarity Shop – Meta Ads Rapport</title>
+  <style>
+    :root {
+      --bg: #f7f2ec;
+      --card: #fffaf4;
+      --ink: #2d2520;
+      --muted: #766b62;
+      --line: #e4d8cc;
+      --good: #2f7d54;
+      --warn: #ba7b19;
+      --bad: #b6463d;
+      --blue: #375a7f;
+      --soft: #efe3d6;
+      --shadow: 0 18px 45px rgba(75, 55, 40, .10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #fff9f1, var(--bg) 38%, #eee3d8);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 64px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 22px;
+      align-items: stretch;
+      margin-bottom: 24px;
+    }
+
+    .hero, .decision-card, .card {
+      background: rgba(255, 250, 244, .88);
+      border: 1px solid rgba(228, 216, 204, .9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero { padding: 34px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--blue);
+      background: #e9eef3;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.12;
+      letter-spacing: -.03em;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    p { margin: 0 0 12px; color: var(--muted); }
+
+    .decision-card {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(160deg, #2f3d31, #5f4936);
+      color: white;
+    }
+
+    .decision-card p { color: rgba(255,255,255,.78); }
+
+    .badge {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 800;
+      font-size: 13px;
+      background: rgba(255,255,255,.14);
+      color: white;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+      margin: 18px 0;
+    }
+
+    .card { padding: 24px; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .metric-value {
+      margin-top: 7px;
+      font-size: 31px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .metric-note { margin-top: 8px; font-size: 13px; color: var(--muted); }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .active { background: #e2f2e8; color: var(--good); }
+    .paused { background: #ececec; color: #555; }
+    .warning { background: #fff0d7; color: var(--warn); }
+    .danger { background: #ffe2df; color: var(--bad); }
+    .info { background: #e6eef6; color: var(--blue); }
+
+    .explain {
+      display: grid;
+      gap: 12px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 12px;
+      padding: 14px;
+      background: #fffdf9;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+
+    .num {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--soft);
+      font-weight: 900;
+      color: #6a4d36;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fffdf9;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 14px 15px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th {
+      background: #f2e8dd;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #5c4f46;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 170px 1fr 80px;
+      align-items: center;
+      gap: 12px;
+      margin: 11px 0;
+      font-size: 14px;
+    }
+
+    .bar-bg {
+      height: 14px;
+      border-radius: 999px;
+      background: #eaded1;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #6a8b72, #d19a5f);
+    }
+
+    .funnel {
+      display: grid;
+      gap: 10px;
+    }
+
+    .funnel-step {
+      padding: 15px 18px;
+      border-radius: 16px;
+      background: #fffdf9;
+      border: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .funnel-step strong { font-size: 18px; }
+
+    .recommendation {
+      padding: 22px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #fff7e8, #f7e4d8);
+      border: 1px solid #e9cdb6;
+    }
+
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    ul { margin: 10px 0 0; padding-left: 20px; color: var(--muted); }
+    li { margin: 7px 0; }
+
+    .footer-note {
+      margin-top: 26px;
+      padding: 18px 20px;
+      border-left: 5px solid var(--blue);
+      background: rgba(255,255,255,.55);
+      border-radius: 14px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 880px) {
+      header, .do-dont { grid-template-columns: 1fr; }
+      .span-3, .span-4, .span-6, .span-8 { grid-column: span 12; }
+      .hero, .decision-card, .card { padding: 20px; }
+      .bar-row { grid-template-columns: 1fr; gap: 7px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <section class="hero">
+        <span class="eyebrow">The Clarity Shop · Meta Ads</span>
+        <h1>Vad betyder datan egentligen?</h1>
+        <p>En enkel visuell rapport för perioden <strong>18–20 juni 2026</strong>. Fokus: förstå skillnaden mellan första Traffic-testet och nuvarande Sales-testet.</p>
+      </section>
+
+      <aside class="decision-card">
+        <div>
+          <span class="badge">Rekommendation</span>
+          <h2 style="margin-top:18px;">Förbered nya annonser – pausade.</h2>
+          <p>Ändra inte live-kampanjen aggressivt ännu. Sales-kampanjen har för lite data och inga köp/add to cart.</p>
+        </div>
+        <p style="margin-top:22px;"><strong>Viktig regel:</strong> ingen skalning, ingen budgethöjning, inga aktiveringar utan bekräftelse.</p>
+      </aside>
+    </header>
+
+    <section class="grid">
+      <article class="card span-3">
+        <div class="metric-label">Total spend</div>
+        <div class="metric-value">92,15 kr</div>
+        <div class="metric-note">Traffic 33,85 kr + Sales 58,30 kr</div>
+      </article>
+      <article class="card span-3">
+        <div class="metric-label">Köp</div>
+        <div class="metric-value">0</div>
+        <div class="metric-note">Inga purchases registrerade</div>
+      </article>
+      <article class="card span-3">
+        <div class="metric-label">Add to cart</div>
+        <div class="metric-value">0</div>
+        <div class="metric-note">Ingen kundvagnssignal ännu</div>
+      </article>
+      <article class="card span-3">
+        <div class="metric-label">Bästa tidiga signal</div>
+        <div class="metric-value">Hook 3</div>
+        <div class="metric-note">Högst CTR och enda ViewContent</div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-6">
+        <h2>Två kampanjer – olika jobb</h2>
+        <div class="explain">
+          <div class="step">
+            <div class="num">1</div>
+            <div>
+              <h3>Traffic-kampanjen</h3>
+              <p>Den letade efter personer som klickar. Den fick billiga klick, men låg CTR. Den var bra som första test, men inte som långsiktig säljstrategi.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <div>
+              <h3>Sales-kampanjen</h3>
+              <p>Den letar efter personer som kan köpa via pixeln. Det är rätt mål, men den har hittills väldigt lite data: 107 impressions, 5 klick, 0 köp.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <div>
+              <h3>Slutsats</h3>
+              <p>Vi har inte tillräckligt med köpdata. Nästa förbättring bör vara bättre creatives, inte högre budget.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card span-6">
+        <h2>Funnel: var tappar vi folk?</h2>
+        <div class="funnel">
+          <div class="funnel-step"><span>Traffic: exponeringar</span><strong>8 229</strong></div>
+          <div class="funnel-step"><span>Traffic: länkklick</span><strong>18</strong></div>
+          <div class="funnel-step"><span>Traffic: landningssidevisningar</span><strong>7</strong></div>
+          <div class="funnel-step"><span>Sales: länkklick</span><strong>5</strong></div>
+          <div class="funnel-step"><span>Sales: landningssidevisningar</span><strong>1</strong></div>
+          <div class="funnel-step"><span>Add to cart / checkout / purchase</span><strong>0</strong></div>
+        </div>
+        <p style="margin-top:14px;">Det största problemet är inte bara köp. Vi behöver först få fler rätt personer att klicka och faktiskt ladda landningssidan.</p>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-12">
+        <h2>Kampanjdata i enkel tabell</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Kampanj / annons</th>
+                <th>Status</th>
+                <th>Mål</th>
+                <th>Spend</th>
+                <th>Impressions</th>
+                <th>Link clicks</th>
+                <th>LP views</th>
+                <th>CTR</th>
+                <th>CPC</th>
+                <th>ATC</th>
+                <th>Köp</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Traffic</strong><br>Story Hook - Facebook Feed</td>
+                <td><span class="status paused">PAUSED</span></td>
+                <td>Link clicks</td>
+                <td>33,85 kr</td>
+                <td>8 229</td>
+                <td>18</td>
+                <td>7</td>
+                <td>0,22%</td>
+                <td>1,88 kr</td>
+                <td>0</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td><strong>Sales</strong><br>Hook 1 — Identitet</td>
+                <td><span class="status active">ACTIVE</span></td>
+                <td>Purchase</td>
+                <td>6,45 kr</td>
+                <td>10</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0,00%</td>
+                <td>—</td>
+                <td>0</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td><strong>Sales</strong><br>Hook 2 — Tillåtelse</td>
+                <td><span class="status active">ACTIVE</span></td>
+                <td>Purchase</td>
+                <td>37,74 kr</td>
+                <td>65</td>
+                <td>3</td>
+                <td>0</td>
+                <td>4,62%</td>
+                <td>12,58 kr</td>
+                <td>0</td>
+                <td>0</td>
+              </tr>
+              <tr>
+                <td><strong>Sales</strong><br>Hook 3 — Transformation</td>
+                <td><span class="status active">ACTIVE</span></td>
+                <td>Purchase</td>
+                <td>14,11 kr</td>
+                <td>32</td>
+                <td>2</td>
+                <td>1</td>
+                <td>9,38%</td>
+                <td>4,70 kr</td>
+                <td>0</td>
+                <td>0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-6">
+        <h2>Spend per Sales-annons</h2>
+        <div class="bar-row"><strong>Hook 2</strong><div class="bar-bg"><div class="bar" style="width:100%"></div></div><span>37,74 kr</span></div>
+        <div class="bar-row"><strong>Hook 3</strong><div class="bar-bg"><div class="bar" style="width:37%"></div></div><span>14,11 kr</span></div>
+        <div class="bar-row"><strong>Hook 1</strong><div class="bar-bg"><div class="bar" style="width:17%"></div></div><span>6,45 kr</span></div>
+        <p style="margin-top:14px;">Meta ger mest budget till Hook 2, men Hook 3 har bättre tidig kvalitetsignal.</p>
+      </article>
+
+      <article class="card span-6">
+        <h2>Tidig annonsbedömning</h2>
+        <div class="explain">
+          <div class="step">
+            <div class="num">⚠</div>
+            <div>
+              <h3>Hook 2 får mest spend</h3>
+              <p>Men den har 0 landningssidevisningar och 0 ViewContent. Den kan vara dyr trots klick.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="num">✓</div>
+            <div>
+              <h3>Hook 3 har bäst tidig signal</h3>
+              <p>Den har högst CTR, lägre CPC än Hook 2 och enda ViewContent-eventet.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-12">
+        <h2>Vad ska vi göra nu?</h2>
+        <div class="do-dont">
+          <div class="recommendation">
+            <h3>Gör detta</h3>
+            <ul>
+              <li>Behåll maxbudget 50 kr/dag.</li>
+              <li>Förbered 3 nya creatives i pausat läge.</li>
+              <li>Testa tydligare visual: produkt + kort hook på bilden.</li>
+              <li>Be Codex hämta ny data innan något ändras.</li>
+              <li>Fokusera på fler landningssidevisningar och Add to Cart.</li>
+            </ul>
+          </div>
+          <div class="recommendation" style="background:linear-gradient(135deg,#fff0ed,#f6dedb);border-color:#e5b9b4;">
+            <h3>Gör inte detta</h3>
+            <ul>
+              <li>Skala inte kampanjen.</li>
+              <li>Höj inte budgeten.</li>
+              <li>Dra inte slutsats från bara 107 Sales-impressions.</li>
+              <li>Ändra inte Business Manager eller betalning.</li>
+              <li>Aktivera inte nya annonser utan granskning.</li>
+            </ul>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card span-12">
+        <h2>Nästa creative-test: enklare och tydligare</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Creative</th>
+                <th>Hook på bild/video</th>
+                <th>Varför</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Creative A</td>
+                <td>Start with clarity, not pressure.</td>
+                <td>Mjuk, premium, tydlig och brand-safe.</td>
+                <td><span class="status info">Skapa pausad</span></td>
+              </tr>
+              <tr>
+                <td>Creative B</td>
+                <td>3 digital workbooks. Instant download.</td>
+                <td>Förklarar snabbt vad produkten faktiskt är.</td>
+                <td><span class="status info">Skapa pausad</span></td>
+              </tr>
+              <tr>
+                <td>Creative C</td>
+                <td>For the woman who keeps overthinking.</td>
+                <td>Mer emotionell, men fortfarande lugn och icke-aggressiv.</td>
+                <td><span class="status info">Skapa pausad</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <div class="footer-note">
+      <strong>Enkel slutsats:</strong> Traffic-testet gav billiga klick men låg CTR. Sales-testet är rätt mål för köp, men har för lite data och inga köp/ATC ännu. Nästa smarta steg är inte mer budget – det är bättre kreativa annonser i pausat läge.
+    </div>
+  </main>
+</body>
+</html>
