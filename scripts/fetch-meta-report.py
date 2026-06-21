@@ -35,6 +35,17 @@ DEFAULT_REPORT_DATA = {
     "cost_per_purchase": "-",
 }
 
+PERIOD_LABELS = {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last_7d": "Last 7 days",
+    "last_14d": "Last 14 days",
+    "last_30d": "Last 30 days",
+    "this_month": "This month",
+    "last_month": "Last month",
+    "maximum": "Maximum",
+}
+
 
 def env(name: str, default: str = "") -> str:
     value = os.environ.get(name, "").strip()
@@ -105,6 +116,7 @@ def parse_meta_error(body: str) -> str:
 
 
 def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str, str]:
+    date_preset = env("META_DATE_PRESET", "today")
     return DEFAULT_REPORT_DATA | {
         "date": now_date(),
         "updated_at": now_stamp(),
@@ -112,6 +124,8 @@ def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str,
         "campaign": campaign,
         "diagnosis": diagnosis,
         "mode": mode,
+        "period": PERIOD_LABELS.get(date_preset, date_preset),
+        "period_key": date_preset,
     }
 
 
@@ -143,6 +157,7 @@ def fetch_meta_data() -> dict[str, str]:
     api_version = env("META_API_VERSION", "v25.0")
     brand = env("REPORT_BRAND", "The Clarity Shop")
     campaign = env("REPORT_CAMPAIGN", "Sales / Purchase test")
+    date_preset = env("META_DATE_PRESET", "today")
 
     if not access_token or not ad_account_id:
         return base_data(
@@ -171,7 +186,7 @@ def fetch_meta_data() -> dict[str, str]:
     params = urllib.parse.urlencode(
         {
             "fields": ",".join(fields),
-            "date_preset": env("META_DATE_PRESET", "today"),
+            "date_preset": date_preset,
             "level": env("META_LEVEL", "account"),
             "access_token": access_token,
         }
@@ -206,7 +221,7 @@ def fetch_meta_data() -> dict[str, str]:
         return base_data(
             brand,
             campaign,
-            "Meta API returned no rows for the selected period. The token worked, but there may be no data today or the account has no active spend in this period.",
+            "Meta API returned no rows for the selected period. The token worked, but there may be no data for this period.",
             "No Meta data",
         )
 
@@ -236,6 +251,8 @@ def fetch_meta_data() -> dict[str, str]:
         "cost_per_purchase": money(cost_per_purchase) if cost_per_purchase else "-",
         "diagnosis": diagnosis,
         "mode": "Live Meta API",
+        "period": PERIOD_LABELS.get(date_preset, date_preset),
+        "period_key": date_preset,
     }
 
 
@@ -276,6 +293,13 @@ def render_html(data: dict[str, str]) -> str:
     .sub {{ color: var(--muted); max-width: 780px; margin: 18px 0 0; font-size: 17px; }}
     .status-row {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }}
     .pill {{ border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }}
+    .period-menu {{ margin-top: 16px; position: relative; max-width: 280px; }}
+    .period-menu summary {{ list-style: none; cursor: pointer; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 11px 15px; font-weight: 800; color: var(--ink); box-shadow: 0 8px 24px rgba(33,25,15,.06); }}
+    .period-menu summary::-webkit-details-marker {{ display: none; }}
+    .period-menu[open] summary {{ border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }}
+    .period-list {{ margin-top: 8px; background: #fffaf2; border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 8px; display: grid; gap: 6px; }}
+    .period-list a {{ text-decoration: none; color: var(--ink); font-weight: 800; padding: 11px 12px; border-radius: 14px; }}
+    .period-list a:hover {{ background: rgba(185,146,85,.10); }}
     .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }}
     .card, .section {{ background: rgba(255,250,242,.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33,25,15,.06); }}
     .section {{ margin-top: 18px; border-radius: 28px; padding: 22px; }}
@@ -287,7 +311,7 @@ def render_html(data: dict[str, str]) -> str:
     .footer {{ color: var(--muted); text-align: center; font-size: 13px; padding: 24px 0 0; }}
     a {{ color: inherit; text-decoration-color: rgba(185,146,85,.55); text-underline-offset: 4px; }}
     @media (max-width: 820px) {{ .wrap {{ padding: 14px 12px 38px; }} .hero {{ padding: 22px; border-radius: 26px; }} .grid {{ grid-template-columns: repeat(2, 1fr); }} .value {{ font-size: 27px; }} h2 {{ font-size: 26px; }} }}
-    @media (max-width: 440px) {{ .grid {{ grid-template-columns: 1fr; }} .section {{ padding: 18px; }} }}
+    @media (max-width: 440px) {{ .grid {{ grid-template-columns: 1fr; }} .section {{ padding: 18px; }} .period-menu {{ max-width: 100%; }} }}
   </style>
 </head>
 <body>
@@ -295,7 +319,20 @@ def render_html(data: dict[str, str]) -> str:
     <section class=\"hero\">
       <p class=\"eyebrow\">{safe(data['brand'])} · Meta Ads</p>
       <h1>Daily Performance Report</h1>
-      <p class=\"sub\">Mobilvänlig Meta Ads-dashboard. Den här sidan uppdateras via GitHub Actions när Meta API-secrets finns på plats.</p>
+      <p class=\"sub\">Rapporten uppdateras automatiskt via GitHub Actions. Välj annan period via menyn.</p>
+      <details class=\"period-menu\">
+        <summary>Period: {safe(data['period'])} ▾</summary>
+        <nav class=\"period-list\">
+          <a href=\"latest.html\">Today</a>
+          <a href=\"yesterday.html\">Yesterday</a>
+          <a href=\"last_7d.html\">Last 7 days</a>
+          <a href=\"last_14d.html\">Last 14 days</a>
+          <a href=\"last_30d.html\">Last 30 days</a>
+          <a href=\"this_month.html\">This month</a>
+          <a href=\"last_month.html\">Last month</a>
+          <a href=\"maximum.html\">Maximum</a>
+        </nav>
+      </details>
       <div class=\"status-row\">
         <span class=\"pill\">Report date: {safe(data['date'])}</span>
         <span class=\"pill\">Updated: {safe(data['updated_at'])}</span>
@@ -305,7 +342,7 @@ def render_html(data: dict[str, str]) -> str:
     </section>
 
     <section class=\"grid\" aria-label=\"Meta Ads key metrics\">
-      <article class=\"card\"><div class=\"label\">Spend</div><div class=\"value\">{safe(data['spend'])}</div><div class=\"note\">Annonskostnad hittills.</div></article>
+      <article class=\"card\"><div class=\"label\">Spend</div><div class=\"value\">{safe(data['spend'])}</div><div class=\"note\">Annonskostnad för perioden.</div></article>
       <article class=\"card\"><div class=\"label\">Impressions</div><div class=\"value\">{safe(data['impressions'])}</div><div class=\"note\">Visningar.</div></article>
       <article class=\"card\"><div class=\"label\">Reach</div><div class=\"value\">{safe(data['reach'])}</div><div class=\"note\">Unika personer.</div></article>
       <article class=\"card\"><div class=\"label\">Link clicks</div><div class=\"value red\">{safe(data['link_clicks'])}</div><div class=\"note\">Klick mot sidan.</div></article>
