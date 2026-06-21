@@ -12,8 +12,10 @@ Fallback mode:
 
 from __future__ import annotations
 
+import html
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -42,6 +44,14 @@ def env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def now_date() -> str:
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def now_stamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+
 def money(value: Any, suffix: str = " kr") -> str:
     try:
         amount = float(value)
@@ -68,6 +78,35 @@ def percent(value: Any) -> str:
     return f"{amount:.2f}%".replace(".", ",")
 
 
+def safe(value: Any) -> str:
+    return html.escape(str(value), quote=True)
+
+
+def compact(value: str, limit: int = 900) -> str:
+    value = " ".join(str(value).split())
+    return value[:limit] + "..." if len(value) > limit else value
+
+
+def parse_meta_error(body: str) -> str:
+    if not body:
+        return "Meta returned an empty error body. Check token, permissions, and ad account ID."
+    try:
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        return compact(body)
+
+    error = payload.get("error", payload)
+    if not isinstance(error, dict):
+        return compact(body)
+
+    parts = []
+    for key in ("message", "type", "code", "error_subcode", "error_user_title", "error_user_msg", "fbtrace_id"):
+        value = error.get(key)
+        if value not in (None, ""):
+            parts.append(f"{key}: {value}")
+    return compact(" | ".join(parts) if parts else body)
+
+
 def get_action_value(actions: list[dict[str, Any]] | None, names: tuple[str, ...]) -> float:
     if not actions:
         return 0.0
@@ -80,21 +119,33 @@ def get_action_value(actions: list[dict[str, Any]] | None, names: tuple[str, ...
     return 0.0
 
 
+def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str, str]:
+    return DEFAULT_REPORT_DATA | {
+        "brand": brand,
+        "campaign": campaign,
+        "date": now_date(),
+        "updated_at": now_stamp(),
+        "diagnosis": diagnosis,
+        "mode": mode,
+    }
+
+
 def fetch_meta_data() -> dict[str, str]:
     access_token = env("META_ACCESS_TOKEN")
     ad_account_id = env("META_AD_ACCOUNT_ID")
     api_version = env("META_API_VERSION", "v20.0")
     brand = env("REPORT_BRAND", "The Clarity Shop")
-    campaign = env("REPORT_CAMPAIGN", "Meta Ads live report")
+    campaign = env("REPORT_CAMPAIGN", "Sales / Purchase test")
 
     if not access_token or not ad_account_id:
-        return DEFAULT_REPORT_DATA | {
-            "brand": brand,
-            "campaign": campaign,
-            "date": datetime.now(timezone.utc).date().isoformat(),
-            "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        }
+        return base_data(
+            brand,
+            campaign,
+            "Missing GitHub secrets. Add META_ACCESS_TOKEN and META_AD_ACCOUNT_ID, then run the workflow again.",
+            "Missing secrets",
+        )
 
+    raw_ad_account_id = ad_account_id
     if not ad_account_id.startswith("act_"):
         ad_account_id = f"act_{ad_account_id}"
 
@@ -124,26 +175,33 @@ def fetch_meta_data() -> dict[str, str]:
     try:
         with urllib.request.urlopen(url, timeout=30) as response:
             payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as error:
+        body = error.read().decode("utf-8", "replace")
+        meta_error = parse_meta_error(body)
+        diagnosis = (
+            f"Meta API HTTP {error.code}: {meta_error}. "
+            f"Checked ad account: {raw_ad_account_id}. "
+            "Fix usually: token permission, token expiry, wrong ad account ID, or token not connected to this Business Manager."
+        )
+        print(diagnosis)
+        return base_data(brand, campaign, diagnosis, "Meta API error")
+    except urllib.error.URLError as error:
+        diagnosis = f"Meta API connection error: {error}. Check network/API availability and try again."
+        print(diagnosis)
+        return base_data(brand, campaign, diagnosis, "Meta API connection error")
     except Exception as error:
-        return DEFAULT_REPORT_DATA | {
-            "brand": brand,
-            "campaign": campaign,
-            "date": datetime.now(timezone.utc).date().isoformat(),
-            "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-            "diagnosis": f"Live fetch failed: {error}",
-            "mode": "Meta API error",
-        }
+        diagnosis = f"Unexpected live fetch error: {type(error).__name__}: {error}"
+        print(diagnosis)
+        return base_data(brand, campaign, diagnosis, "Meta API error")
 
     rows = payload.get("data", [])
     if not rows:
-        return DEFAULT_REPORT_DATA | {
-            "brand": brand,
-            "campaign": campaign,
-            "date": datetime.now(timezone.utc).date().isoformat(),
-            "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-            "diagnosis": "Meta API returned no rows for the selected period.",
-            "mode": "No Meta data",
-        }
+        return base_data(
+            brand,
+            campaign,
+            "Meta API returned no rows for the selected period. The token worked, but there may be no data today or the account has no active spend in this period.",
+            "No Meta data",
+        )
 
     row = rows[0]
     spend = row.get("spend", "0")
@@ -157,8 +215,8 @@ def fetch_meta_data() -> dict[str, str]:
     diagnosis = diagnose(float(ctr_value or 0), purchases)
 
     return {
-        "date": datetime.now(timezone.utc).date().isoformat(),
-        "updated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "date": now_date(),
+        "updated_at": now_stamp(),
         "brand": brand,
         "campaign": campaign,
         "spend": money(spend),
@@ -191,7 +249,7 @@ def render_html(data: dict[str, str]) -> str:
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" />
   <meta name=\"theme-color\" content=\"#0f172a\" />
-  <title>Meta Ads Report - {data['brand']}</title>
+  <title>Meta Ads Report - {safe(data['brand'])}</title>
   <style>
     :root {{
       --bg: #f6f1e8;
@@ -250,34 +308,34 @@ def render_html(data: dict[str, str]) -> str:
 <body>
   <main class=\"wrap\">
     <section class=\"hero\">
-      <p class=\"eyebrow\">{data['brand']} · Meta Ads</p>
+      <p class=\"eyebrow\">{safe(data['brand'])} · Meta Ads</p>
       <h1>Daily Performance Report</h1>
       <p class=\"sub\">Mobilvänlig Meta Ads-dashboard. Den här sidan uppdateras via GitHub Actions när Meta API-secrets finns på plats.</p>
       <div class=\"status-row\">
-        <span class=\"pill\">Report date: {data['date']}</span>
-        <span class=\"pill\">Updated: {data['updated_at']}</span>
-        <span class=\"pill\">Mode: {data['mode']}</span>
-        <span class=\"pill\">Campaign: {data['campaign']}</span>
+        <span class=\"pill\">Report date: {safe(data['date'])}</span>
+        <span class=\"pill\">Updated: {safe(data['updated_at'])}</span>
+        <span class=\"pill\">Mode: {safe(data['mode'])}</span>
+        <span class=\"pill\">Campaign: {safe(data['campaign'])}</span>
       </div>
     </section>
 
     <section class=\"grid\" aria-label=\"Meta Ads key metrics\">
-      <article class=\"card\"><div class=\"label\">Spend</div><div class=\"value\">{data['spend']}</div><div class=\"note\">Annonskostnad hittills.</div></article>
-      <article class=\"card\"><div class=\"label\">Impressions</div><div class=\"value\">{data['impressions']}</div><div class=\"note\">Visningar.</div></article>
-      <article class=\"card\"><div class=\"label\">Reach</div><div class=\"value\">{data['reach']}</div><div class=\"note\">Unika personer.</div></article>
-      <article class=\"card\"><div class=\"label\">Link clicks</div><div class=\"value red\">{data['link_clicks']}</div><div class=\"note\">Klick mot sidan.</div></article>
-      <article class=\"card\"><div class=\"label\">CTR</div><div class=\"value red\">{data['ctr']}</div><div class=\"note\">Scroll-stop signal.</div></article>
-      <article class=\"card\"><div class=\"label\">CPC</div><div class=\"value\">{data['cpc']}</div><div class=\"note\">Kostnad per klick.</div></article>
-      <article class=\"card\"><div class=\"label\">Purchases</div><div class=\"value green\">{data['purchases']}</div><div class=\"note\">Köp enligt Meta.</div></article>
-      <article class=\"card\"><div class=\"label\">Cost / purchase</div><div class=\"value\">{data['cost_per_purchase']}</div><div class=\"note\">Om purchase-data finns.</div></article>
+      <article class=\"card\"><div class=\"label\">Spend</div><div class=\"value\">{safe(data['spend'])}</div><div class=\"note\">Annonskostnad hittills.</div></article>
+      <article class=\"card\"><div class=\"label\">Impressions</div><div class=\"value\">{safe(data['impressions'])}</div><div class=\"note\">Visningar.</div></article>
+      <article class=\"card\"><div class=\"label\">Reach</div><div class=\"value\">{safe(data['reach'])}</div><div class=\"note\">Unika personer.</div></article>
+      <article class=\"card\"><div class=\"label\">Link clicks</div><div class=\"value red\">{safe(data['link_clicks'])}</div><div class=\"note\">Klick mot sidan.</div></article>
+      <article class=\"card\"><div class=\"label\">CTR</div><div class=\"value red\">{safe(data['ctr'])}</div><div class=\"note\">Scroll-stop signal.</div></article>
+      <article class=\"card\"><div class=\"label\">CPC</div><div class=\"value\">{safe(data['cpc'])}</div><div class=\"note\">Kostnad per klick.</div></article>
+      <article class=\"card\"><div class=\"label\">Purchases</div><div class=\"value green\">{safe(data['purchases'])}</div><div class=\"note\">Köp enligt Meta.</div></article>
+      <article class=\"card\"><div class=\"label\">Cost / purchase</div><div class=\"value\">{safe(data['cost_per_purchase'])}</div><div class=\"note\">Om purchase-data finns.</div></article>
     </section>
 
     <section class=\"section\">
       <h2>Diagnosis</h2>
-      <p>{data['diagnosis']}</p>
+      <p>{safe(data['diagnosis'])}</p>
     </section>
 
-    <p class=\"footer\">Generated for Lajo · The Clarity Shop · <a href=\"archive/{data['date']}.html\">Open archived report</a></p>
+    <p class=\"footer\">Generated for Lajo · The Clarity Shop · <a href=\"archive/{safe(data['date'])}.html\">Open archived report</a></p>
   </main>
 </body>
 </html>
@@ -291,9 +349,9 @@ def main() -> None:
     archive_dir.mkdir(parents=True, exist_ok=True)
 
     data = fetch_meta_data()
-    html = render_html(data)
-    (report_dir / "latest.html").write_text(html, encoding="utf-8")
-    (archive_dir / f"{data['date']}.html").write_text(html, encoding="utf-8")
+    html_output = render_html(data)
+    (report_dir / "latest.html").write_text(html_output, encoding="utf-8")
+    (archive_dir / f"{data['date']}.html").write_text(html_output, encoding="utf-8")
 
     print("Report generated:")
     print(report_dir / "latest.html")
