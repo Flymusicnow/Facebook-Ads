@@ -13,7 +13,6 @@
       --muted: #667085;
       --line: rgba(151, 124, 80, 0.25);
       --gold: #b99255;
-      --rose: #c88f8f;
       --danger: #b54747;
       --ok: #2f7d57;
       --shadow: 0 18px 50px rgba(33, 25, 15, 0.10);
@@ -23,39 +22,28 @@
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(200, 143, 143, 0.18), transparent 34%),
-        radial-gradient(circle at top right, rgba(185, 146, 85, 0.18), transparent 34%),
-        var(--bg);
+      background: radial-gradient(circle at top left, rgba(200,143,143,.18), transparent 34%), radial-gradient(circle at top right, rgba(185,146,85,.18), transparent 34%), var(--bg);
       color: var(--ink);
       line-height: 1.5;
     }
     .wrap { width: min(1120px, 100%); margin: 0 auto; padding: 24px 16px 48px; }
-    .hero {
-      background: linear-gradient(135deg, rgba(255, 250, 242, 0.96), rgba(247, 239, 225, 0.94));
-      border: 1px solid var(--line);
-      border-radius: 32px;
-      box-shadow: var(--shadow);
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-    }
-    .eyebrow { text-transform: uppercase; letter-spacing: 0.16em; color: var(--gold); font-size: 12px; font-weight: 800; margin: 0 0 12px; }
-    h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 7vw, 72px); line-height: 0.95; margin: 0; max-width: 800px; }
+    .hero { background: linear-gradient(135deg, rgba(255,250,242,.96), rgba(247,239,225,.94)); border: 1px solid var(--line); border-radius: 32px; box-shadow: var(--shadow); padding: 28px; }
+    .eyebrow { text-transform: uppercase; letter-spacing: .16em; color: var(--gold); font-size: 12px; font-weight: 800; margin: 0 0 12px; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 7vw, 72px); line-height: .95; margin: 0; max-width: 800px; }
     h2 { font-family: Georgia, "Times New Roman", serif; font-size: 30px; margin: 0 0 12px; }
     .sub { color: var(--muted); max-width: 780px; margin: 18px 0 0; font-size: 17px; }
     .status-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-    .pill { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .pill { border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
-    .card, .section { background: rgba(255, 250, 242, 0.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33, 25, 15, 0.06); }
+    .card, .section { background: rgba(255,250,242,.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33,25,15,.06); }
     .section { margin-top: 18px; border-radius: 28px; padding: 22px; }
-    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.10em; font-weight: 800; margin-bottom: 8px; }
-    .value { font-size: 31px; font-weight: 900; letter-spacing: -0.03em; }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .10em; font-weight: 800; margin-bottom: 8px; }
+    .value { font-size: 31px; font-weight: 900; letter-spacing: -.03em; }
     .note { color: var(--muted); font-size: 13px; margin-top: 6px; }
     .red { color: var(--danger); font-weight: 900; }
     .green { color: var(--ok); font-weight: 900; }
     .footer { color: var(--muted); text-align: center; font-size: 13px; padding: 24px 0 0; }
-    a { color: inherit; text-decoration-color: rgba(185, 146, 85, 0.55); text-underline-offset: 4px; }
+    a { color: inherit; text-decoration-color: rgba(185,146,85,.55); text-underline-offset: 4px; }
     @media (max-width: 820px) { .wrap { padding: 14px 12px 38px; } .hero { padding: 22px; border-radius: 26px; } .grid { grid-template-columns: repeat(2, 1fr); } .value { font-size: 27px; } h2 { font-size: 26px; } }
     @media (max-width: 440px) { .grid { grid-template-columns: 1fr; } .section { padding: 18px; } }
   </style>
@@ -68,26 +56,26 @@
       <p class="sub">Mobilvänlig Meta Ads-dashboard. Den här sidan uppdateras via GitHub Actions när Meta API-secrets finns på plats.</p>
       <div class="status-row">
         <span class="pill">Report date: 2026-06-21</span>
-        <span class="pill">Updated: 2026-06-21 10:27 UTC</span>
-        <span class="pill">Mode: Meta API error</span>
+        <span class="pill">Updated: 2026-06-21 10:29 UTC</span>
+        <span class="pill">Mode: Live Meta API</span>
         <span class="pill">Campaign: Sales / Purchase test</span>
       </div>
     </section>
 
     <section class="grid" aria-label="Meta Ads key metrics">
-      <article class="card"><div class="label">Spend</div><div class="value">10,92 kr</div><div class="note">Annonskostnad hittills.</div></article>
-      <article class="card"><div class="label">Impressions</div><div class="value">7 200</div><div class="note">Visningar.</div></article>
-      <article class="card"><div class="label">Reach</div><div class="value">3 241</div><div class="note">Unika personer.</div></article>
-      <article class="card"><div class="label">Link clicks</div><div class="value red">3</div><div class="note">Klick mot sidan.</div></article>
-      <article class="card"><div class="label">CTR</div><div class="value red">0,04%</div><div class="note">Scroll-stop signal.</div></article>
-      <article class="card"><div class="label">CPC</div><div class="value">3,64 kr</div><div class="note">Kostnad per klick.</div></article>
+      <article class="card"><div class="label">Spend</div><div class="value">44,08 kr</div><div class="note">Annonskostnad hittills.</div></article>
+      <article class="card"><div class="label">Impressions</div><div class="value">58</div><div class="note">Visningar.</div></article>
+      <article class="card"><div class="label">Reach</div><div class="value">52</div><div class="note">Unika personer.</div></article>
+      <article class="card"><div class="label">Link clicks</div><div class="value red">2</div><div class="note">Klick mot sidan.</div></article>
+      <article class="card"><div class="label">CTR</div><div class="value red">5,17%</div><div class="note">Scroll-stop signal.</div></article>
+      <article class="card"><div class="label">CPC</div><div class="value">14,69 kr</div><div class="note">Kostnad per klick.</div></article>
       <article class="card"><div class="label">Purchases</div><div class="value green">0</div><div class="note">Köp enligt Meta.</div></article>
       <article class="card"><div class="label">Cost / purchase</div><div class="value">-</div><div class="note">Om purchase-data finns.</div></article>
     </section>
 
     <section class="section">
       <h2>Diagnosis</h2>
-      <p>Meta API HTTP 400: message: (#2635) You are calling a deprecated version of the Ads API. Please upgrade to the latest version: v25.0. | type: OAuthException | code: 2635 | fbtrace_id: AnJf6kgcGSQ2snZ-SZzIcw-. Checked ad account: act_1404880484841247. Fix usually: token permission, token expiry, wrong ad account ID, or token not connected to this Business Manager.</p>
+      <p>CTR is strong enough to inspect checkout, offer, pricing, and purchase conversion.</p>
     </section>
 
     <p class="footer">Generated for Lajo · The Clarity Shop · <a href="archive/2026-06-21.html">Open archived report</a></p>
