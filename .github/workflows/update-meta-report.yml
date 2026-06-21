@@ -43,7 +43,7 @@ jobs:
             cp "reports/meta-ads/latest.html" "reports/meta-ads/${preset}.html"
           done
 
-          cp "reports/meta-ads/dashboard.html" "reports/meta-ads/latest.html"
+          cp "reports/meta-ads/today.html" "reports/meta-ads/latest.html"
 
       - name: Commit report update
         run: |
