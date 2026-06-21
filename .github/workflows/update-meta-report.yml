@@ -31,7 +31,7 @@ jobs:
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
-          META_API_VERSION: ${{ secrets.META_API_VERSION }}
+          META_API_VERSION: v25.0
           META_DATE_PRESET: today
           META_LEVEL: account
           REPORT_BRAND: The Clarity Shop
