@@ -2,6 +2,12 @@ name: Update Meta Ads Report
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/fetch-meta-report.py"
+      - ".github/workflows/update-meta-report.yml"
   schedule:
     - cron: "0 * * * *"
 
