@@ -2,21 +2,6 @@ name: Update Meta Ads Report
 
 on:
   workflow_dispatch:
-    inputs:
-      date_preset:
-        description: "Meta Ads date range"
-        required: true
-        default: "today"
-        type: choice
-        options:
-          - today
-          - yesterday
-          - last_7d
-          - last_14d
-          - last_30d
-          - this_month
-          - last_month
-          - maximum
   push:
     branches:
       - main
@@ -42,22 +27,29 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate Meta Ads report
+      - name: Generate Meta Ads period reports
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
           META_API_VERSION: v25.0
-          META_DATE_PRESET: ${{ github.event.inputs.date_preset || 'today' }}
           META_LEVEL: account
           REPORT_BRAND: The Clarity Shop
           REPORT_CAMPAIGN: Sales / Purchase test
-        run: python scripts/fetch-meta-report.py
+        run: |
+          set -euo pipefail
+
+          for preset in today yesterday last_7d last_14d last_30d this_month last_month maximum; do
+            META_DATE_PRESET="$preset" python scripts/fetch-meta-report.py
+            cp "reports/meta-ads/latest.html" "reports/meta-ads/${preset}.html"
+          done
+
+          cp "reports/meta-ads/dashboard.html" "reports/meta-ads/latest.html"
 
       - name: Commit report update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add reports/meta-ads/latest.html reports/meta-ads/archive/*.html
+          git add reports/meta-ads/*.html reports/meta-ads/archive/*.html
           if git diff --cached --quiet; then
             echo "No report changes to commit."
           else
