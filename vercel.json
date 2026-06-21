@@ -1,0 +1,14 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/latest",
+      "destination": "/reports/meta-ads/latest.html"
+    },
+    {
+      "source": "/meta-ads",
+      "destination": "/reports/meta-ads/latest.html"
+    }
+  ]
+}
