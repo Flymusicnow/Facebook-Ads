@@ -2,6 +2,21 @@ name: Update Meta Ads Report
 
 on:
   workflow_dispatch:
+    inputs:
+      date_preset:
+        description: "Meta Ads date range"
+        required: true
+        default: "today"
+        type: choice
+        options:
+          - today
+          - yesterday
+          - last_7d
+          - last_14d
+          - last_30d
+          - this_month
+          - last_month
+          - maximum
   push:
     branches:
       - main
@@ -32,7 +47,7 @@ jobs:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
           META_API_VERSION: v25.0
-          META_DATE_PRESET: today
+          META_DATE_PRESET: ${{ github.event.inputs.date_preset || 'today' }}
           META_LEVEL: account
           REPORT_BRAND: The Clarity Shop
           REPORT_CAMPAIGN: Sales / Purchase test
