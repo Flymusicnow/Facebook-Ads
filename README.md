@@ -2,22 +2,95 @@
 
 Mobile-first Meta Ads reporting dashboard for The Clarity Shop.
 
-## Live report path
-
-After Vercel deployment, open:
+## Live Vercel URL
 
 ```txt
-/reports/meta-ads/latest.html
+https://facebook-ads-teal.vercel.app/reports/meta-ads/latest
 ```
 
-Short paths also work through `vercel.json`:
+Alternative paths:
 
 ```txt
-/latest
-/meta-ads
+https://facebook-ads-teal.vercel.app/latest
+https://facebook-ads-teal.vercel.app/meta-ads
 ```
 
-The root `/` redirects to the latest report.
+## What is live now
+
+The Vercel page is live.
+
+The repo now also includes a GitHub Actions live-update system that can update the report every hour.
+
+## What is still needed for real Facebook Ads data
+
+Add these GitHub repository secrets:
+
+```txt
+META_ACCESS_TOKEN
+META_AD_ACCOUNT_ID
+```
+
+Optional secret:
+
+```txt
+META_API_VERSION
+```
+
+Default API version in the script is `v20.0`.
+
+## How to add secrets in GitHub
+
+1. Open the GitHub repo `Flymusicnow/Facebook-Ads`.
+2. Go to `Settings`.
+3. Go to `Secrets and variables`.
+4. Click `Actions`.
+5. Click `New repository secret`.
+6. Add:
+
+```txt
+Name: META_ACCESS_TOKEN
+Secret: your Meta access token
+```
+
+7. Add:
+
+```txt
+Name: META_AD_ACCOUNT_ID
+Secret: act_1234567890
+```
+
+The ad account ID can include or exclude `act_`. The script handles both.
+
+## Automatic update
+
+The workflow runs every hour:
+
+```txt
+.github/workflows/update-meta-report.yml
+```
+
+It runs:
+
+```bash
+python scripts/fetch-meta-report.py
+```
+
+Then commits the updated files:
+
+```txt
+reports/meta-ads/latest.html
+reports/meta-ads/archive/YYYY-MM-DD.html
+```
+
+When GitHub commits the updated report, Vercel should auto-deploy if the repo is connected through Vercel Git integration.
+
+## Manual update
+
+You can also run it manually in GitHub:
+
+1. Open `Actions`.
+2. Choose `Update Meta Ads Report`.
+3. Click `Run workflow`.
 
 ## Structure
 
@@ -25,6 +98,9 @@ The root `/` redirects to the latest report.
 Facebook-Ads/
 ├─ index.html
 ├─ vercel.json
+├─ .github/
+│  └─ workflows/
+│     └─ update-meta-report.yml
 ├─ reports/
 │  └─ meta-ads/
 │     ├─ latest.html
@@ -35,44 +111,6 @@ Facebook-Ads/
 └─ README.md
 ```
 
-## Update report manually
+## Fallback mode
 
-Edit:
-
-```txt
-reports/meta-ads/latest.html
-```
-
-Then copy the same report into archive with the correct date:
-
-```txt
-reports/meta-ads/archive/YYYY-MM-DD.html
-```
-
-## Generate report locally
-
-```bash
-python scripts/fetch-meta-report.py
-```
-
-This writes:
-
-```txt
-reports/meta-ads/latest.html
-reports/meta-ads/archive/2026-06-21.html
-```
-
-## Vercel setup
-
-1. Go to Vercel.
-2. Add New Project.
-3. Import Git Repository.
-4. Select `Flymusicnow/Facebook-Ads`.
-5. Keep default static settings.
-6. Deploy.
-
-No environment variables are required for the current static version.
-
-## Next upgrade
-
-Connect `scripts/fetch-meta-report.py` to the Meta Marketing API so `latest.html` updates automatically every day.
+If secrets are missing, the script still creates a report, but it will show fallback/static data and clearly say that Meta secrets are missing.
