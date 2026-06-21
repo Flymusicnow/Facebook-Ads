@@ -34,6 +34,13 @@
     .sub { color: var(--muted); max-width: 780px; margin: 18px 0 0; font-size: 17px; }
     .status-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
     .pill { border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .period-menu { margin-top: 16px; position: relative; max-width: 280px; }
+    .period-menu summary { list-style: none; cursor: pointer; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 11px 15px; font-weight: 800; color: var(--ink); box-shadow: 0 8px 24px rgba(33,25,15,.06); }
+    .period-menu summary::-webkit-details-marker { display: none; }
+    .period-menu[open] summary { border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
+    .period-list { margin-top: 8px; background: #fffaf2; border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 8px; display: grid; gap: 6px; }
+    .period-list a { text-decoration: none; color: var(--ink); font-weight: 800; padding: 11px 12px; border-radius: 14px; }
+    .period-list a:hover { background: rgba(185,146,85,.10); }
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
     .card, .section { background: rgba(255,250,242,.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33,25,15,.06); }
     .section { margin-top: 18px; border-radius: 28px; padding: 22px; }
@@ -45,7 +52,7 @@
     .footer { color: var(--muted); text-align: center; font-size: 13px; padding: 24px 0 0; }
     a { color: inherit; text-decoration-color: rgba(185,146,85,.55); text-underline-offset: 4px; }
     @media (max-width: 820px) { .wrap { padding: 14px 12px 38px; } .hero { padding: 22px; border-radius: 26px; } .grid { grid-template-columns: repeat(2, 1fr); } .value { font-size: 27px; } h2 { font-size: 26px; } }
-    @media (max-width: 440px) { .grid { grid-template-columns: 1fr; } .section { padding: 18px; } }
+    @media (max-width: 440px) { .grid { grid-template-columns: 1fr; } .section { padding: 18px; } .period-menu { max-width: 100%; } }
   </style>
 </head>
 <body>
@@ -53,17 +60,30 @@
     <section class="hero">
       <p class="eyebrow">The Clarity Shop · Meta Ads</p>
       <h1>Daily Performance Report</h1>
-      <p class="sub">Mobilvänlig Meta Ads-dashboard. Den här sidan uppdateras via GitHub Actions när Meta API-secrets finns på plats.</p>
+      <p class="sub">Rapporten uppdateras automatiskt via GitHub Actions. Välj annan period via menyn.</p>
+      <details class="period-menu">
+        <summary>Period: Maximum ▾</summary>
+        <nav class="period-list">
+          <a href="latest.html">Today</a>
+          <a href="yesterday.html">Yesterday</a>
+          <a href="last_7d.html">Last 7 days</a>
+          <a href="last_14d.html">Last 14 days</a>
+          <a href="last_30d.html">Last 30 days</a>
+          <a href="this_month.html">This month</a>
+          <a href="last_month.html">Last month</a>
+          <a href="maximum.html">Maximum</a>
+        </nav>
+      </details>
       <div class="status-row">
         <span class="pill">Report date: 2026-06-21</span>
-        <span class="pill">Updated: 2026-06-21 11:32 UTC</span>
+        <span class="pill">Updated: 2026-06-21 11:33 UTC</span>
         <span class="pill">Mode: Live Meta API</span>
         <span class="pill">Campaign: Sales / Purchase test</span>
       </div>
     </section>
 
     <section class="grid" aria-label="Meta Ads key metrics">
-      <article class="card"><div class="label">Spend</div><div class="value">158,72 kr</div><div class="note">Annonskostnad hittills.</div></article>
+      <article class="card"><div class="label">Spend</div><div class="value">158,72 kr</div><div class="note">Annonskostnad för perioden.</div></article>
       <article class="card"><div class="label">Impressions</div><div class="value">8 447</div><div class="note">Visningar.</div></article>
       <article class="card"><div class="label">Reach</div><div class="value">4 122</div><div class="note">Unika personer.</div></article>
       <article class="card"><div class="label">Link clicks</div><div class="value red">26</div><div class="note">Klick mot sidan.</div></article>
