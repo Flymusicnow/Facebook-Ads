@@ -3,56 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#f6f1e8" />
   <title>Meta Ads Report - The Clarity Shop</title>
   <style>
-    :root {
-      --bg: #f6f1e8;
-      --panel: #fffaf2;
-      --ink: #1f2933;
-      --muted: #667085;
-      --line: rgba(151, 124, 80, 0.25);
-      --gold: #b99255;
-      --danger: #b54747;
-      --ok: #2f7d57;
-      --shadow: 0 18px 50px rgba(33, 25, 15, 0.10);
-      --radius: 24px;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top left, rgba(200,143,143,.18), transparent 34%), radial-gradient(circle at top right, rgba(185,146,85,.18), transparent 34%), var(--bg);
-      color: var(--ink);
-      line-height: 1.5;
-    }
-    .wrap { width: min(1120px, 100%); margin: 0 auto; padding: 24px 16px 48px; }
-    .hero { background: linear-gradient(135deg, rgba(255,250,242,.96), rgba(247,239,225,.94)); border: 1px solid var(--line); border-radius: 32px; box-shadow: var(--shadow); padding: 28px; }
-    .eyebrow { text-transform: uppercase; letter-spacing: .16em; color: var(--gold); font-size: 12px; font-weight: 800; margin: 0 0 12px; }
-    h1 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 7vw, 72px); line-height: .95; margin: 0; max-width: 800px; }
-    h2 { font-family: Georgia, "Times New Roman", serif; font-size: 30px; margin: 0 0 12px; }
-    .sub { color: var(--muted); max-width: 780px; margin: 18px 0 0; font-size: 17px; }
-    .status-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
-    .pill { border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }
-    .period-menu { margin-top: 16px; position: relative; max-width: 280px; }
-    .period-menu summary { list-style: none; cursor: pointer; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 11px 15px; font-weight: 800; color: var(--ink); box-shadow: 0 8px 24px rgba(33,25,15,.06); }
-    .period-menu summary::-webkit-details-marker { display: none; }
-    .period-menu[open] summary { border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; }
-    .period-list { margin-top: 8px; background: #fffaf2; border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 8px; display: grid; gap: 6px; }
-    .period-list a { text-decoration: none; color: var(--ink); font-weight: 800; padding: 11px 12px; border-radius: 14px; }
-    .period-list a:hover { background: rgba(185,146,85,.10); }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }
-    .card, .section { background: rgba(255,250,242,.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33,25,15,.06); }
-    .section { margin-top: 18px; border-radius: 28px; padding: 22px; }
-    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .10em; font-weight: 800; margin-bottom: 8px; }
-    .value { font-size: 31px; font-weight: 900; letter-spacing: -.03em; }
-    .note { color: var(--muted); font-size: 13px; margin-top: 6px; }
-    .red { color: var(--danger); font-weight: 900; }
-    .green { color: var(--ok); font-weight: 900; }
-    .footer { color: var(--muted); text-align: center; font-size: 13px; padding: 24px 0 0; }
-    a { color: inherit; text-decoration-color: rgba(185,146,85,.55); text-underline-offset: 4px; }
-    @media (max-width: 820px) { .wrap { padding: 14px 12px 38px; } .hero { padding: 22px; border-radius: 26px; } .grid { grid-template-columns: repeat(2, 1fr); } .value { font-size: 27px; } h2 { font-size: 26px; } }
-    @media (max-width: 440px) { .grid { grid-template-columns: 1fr; } .section { padding: 18px; } .period-menu { max-width: 100%; } }
+    :root { --bg:#f6f1e8; --panel:#fffaf2; --ink:#1f2933; --muted:#667085; --line:rgba(151,124,80,.24); --gold:#b99255; --danger:#b54747; --ok:#2f7d57; --warn:#c6782f; --soft:#e9dfcf; --shadow:0 18px 50px rgba(33,25,15,.10); --radius:24px; }
+    * { box-sizing:border-box; } body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:radial-gradient(circle at top left,rgba(200,143,143,.18),transparent 34%),radial-gradient(circle at top right,rgba(185,146,85,.20),transparent 34%),var(--bg); color:var(--ink); line-height:1.5; }
+    .wrap { width:min(1180px,100%); margin:0 auto; padding:24px 16px 48px; } .hero,.section,.card { background:rgba(255,250,242,.92); border:1px solid var(--line); box-shadow:var(--shadow); }
+    .hero { border-radius:34px; padding:30px; } .eyebrow { text-transform:uppercase; letter-spacing:.16em; color:var(--gold); font-size:12px; font-weight:900; margin:0 0 12px; }
+    h1,h2,h3 { font-family:Georgia,"Times New Roman",serif; } h1 { font-size:clamp(38px,7vw,76px); line-height:.95; margin:0; } h2 { font-size:32px; margin:0 0 12px; } h3 { font-size:30px; margin:4px 0 8px; }
+    .sub,.note,.metric-help,.section p,.section li { color:var(--muted); } .sub { max-width:780px; margin:18px 0 0; font-size:17px; } .status-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; } .pill { border:1px solid var(--line); background:rgba(255,255,255,.58); border-radius:999px; padding:9px 13px; color:var(--muted); font-size:13px; font-weight:800; }
+    .period-menu { margin-top:16px; max-width:280px; } .period-menu summary { list-style:none; cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:999px; padding:11px 15px; font-weight:900; box-shadow:0 8px 24px rgba(33,25,15,.06); } .period-menu summary::-webkit-details-marker { display:none; } .period-list { margin-top:8px; background:#fffaf2; border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); padding:8px; display:grid; gap:6px; } .period-list a { text-decoration:none; color:var(--ink); font-weight:800; padding:11px 12px; border-radius:14px; } .period-list a:hover { background:rgba(185,146,85,.10); }
+    .section { margin-top:18px; border-radius:28px; padding:24px; } .summary-box { border-left:5px solid var(--gold); } .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:18px; } .card { border-radius:var(--radius); padding:18px; } .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.10em; font-weight:900; margin-bottom:8px; } .value { font-size:31px; font-weight:950; letter-spacing:-.03em; } .metric-help { font-size:12px; margin-top:5px; } .red,.danger { color:var(--danger); font-weight:900; } .green,.positive { color:var(--ok); font-weight:900; } .warning { color:var(--warn); font-weight:900; } .muted { color:var(--muted); font-weight:900; }
+    .top-card { display:grid; gap:18px; } .top-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; } .top-grid span { background:#fff; border:1px solid var(--line); border-radius:18px; padding:12px; color:var(--ink); } .top-grid b { display:block; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; } .meaning,.top-empty { background:rgba(47,125,87,.09); border:1px solid rgba(47,125,87,.22); border-radius:18px; padding:14px; color:var(--ok); font-weight:800; }
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:22px; background:#fff; } table { width:100%; border-collapse:collapse; min-width:1080px; } th,td { text-align:left; padding:13px 12px; border-bottom:1px solid rgba(151,124,80,.16); vertical-align:top; font-size:14px; } th { background:#f4eadb; color:#5d4d39; font-size:12px; text-transform:uppercase; letter-spacing:.08em; } .badge { display:inline-block; border-radius:999px; padding:7px 10px; background:rgba(102,112,133,.10); white-space:nowrap; } .badge.positive { background:rgba(47,125,87,.12); } .badge.warning { background:rgba(198,120,47,.14); } .badge.danger { background:rgba(181,71,71,.12); } .badge.muted { background:rgba(102,112,133,.12); }
+    .read-list,.diag-list { margin:10px 0 0; padding-left:20px; } .action { text-align:center; background:linear-gradient(135deg,#fffaf2,#f3e6d2); } .recommendation { display:inline-block; margin:8px 0 10px; padding:14px 22px; border-radius:999px; background:var(--ink); color:#fff; font-weight:950; letter-spacing:.08em; } .footer { color:var(--muted); text-align:center; font-size:13px; padding:24px 0 0; } a { color:inherit; text-decoration-color:rgba(185,146,85,.55); text-underline-offset:4px; }
+    @media (max-width:820px) { .wrap { padding:14px 12px 38px; } .hero { padding:22px; border-radius:26px; } .grid,.top-grid { grid-template-columns:repeat(2,1fr); } .value { font-size:27px; } h2 { font-size:26px; } }
+    @media (max-width:640px) { table { min-width:0; } thead { display:none; } tr { display:block; padding:12px; border-bottom:1px solid var(--line); } td { display:grid; grid-template-columns:126px 1fr; gap:10px; border:0; padding:8px 0; } td::before { content:attr(data-label); color:var(--muted); font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; } .top-grid,.grid { grid-template-columns:1fr; } .section { padding:18px; } .period-menu { max-width:100%; } }
   </style>
 </head>
 <body>
@@ -60,43 +26,155 @@
     <section class="hero">
       <p class="eyebrow">The Clarity Shop · Meta Ads</p>
       <h1>Daily Performance Report</h1>
-      <p class="sub">Rapporten uppdateras automatiskt via GitHub Actions. Välj annan period via menyn.</p>
-      <details class="period-menu">
-        <summary>Period: Last 30 days ▾</summary>
-        <nav class="period-list">
-          <a href="latest.html">Today</a>
-          <a href="yesterday.html">Yesterday</a>
-          <a href="last_7d.html">Last 7 days</a>
-          <a href="last_14d.html">Last 14 days</a>
-          <a href="last_30d.html">Last 30 days</a>
-          <a href="this_month.html">This month</a>
-          <a href="last_month.html">Last month</a>
-          <a href="maximum.html">Maximum</a>
-        </nav>
-      </details>
-      <div class="status-row">
-        <span class="pill">Report date: 2026-06-21</span>
-        <span class="pill">Updated: 2026-06-21 22:08 UTC</span>
-        <span class="pill">Mode: Live Meta API</span>
-        <span class="pill">Campaign: Sales / Purchase test</span>
-      </div>
+      <p class="sub">En lugn och pedagogisk daglig rapport för Lajo: vad som händer, vilka annonser som visar signal, och vilket nästa steg som är säkrast.</p>
+      <details class="period-menu"><summary>Period: Last 30 days ▾</summary><nav class="period-list"><a href="latest.html">Today</a><a href="yesterday.html">Yesterday</a><a href="last_7d.html">Last 7 days</a><a href="last_14d.html">Last 14 days</a><a href="last_30d.html">Last 30 days</a><a href="this_month.html">This month</a><a href="last_month.html">Last month</a><a href="maximum.html">Maximum</a></nav></details>
+      <div class="status-row"><span class="pill">Report date: 2026-06-21</span><span class="pill">Updated: 2026-06-21 22:52 UTC</span><span class="pill">Mode: Live Meta API · ad level</span><span class="pill">Campaign: Starter Bundle - Sales - Jun 2026</span></div>
     </section>
+
+    <section class="section summary-box"><h2>Vad händer just nu?</h2><p><strong>Vi får klick men inga köp ännu.</strong> Det betyder att vi inte ska skala ännu. Nästa steg är att förstå vilken annons som får bäst respons och fortsätta samla data.</p></section>
 
     <section class="grid" aria-label="Meta Ads key metrics">
-      <article class="card"><div class="label">Spend</div><div class="value">174,92 kr</div><div class="note">Annonskostnad för perioden.</div></article>
-      <article class="card"><div class="label">Impressions</div><div class="value">8 484</div><div class="note">Visningar.</div></article>
-      <article class="card"><div class="label">Reach</div><div class="value">4 135</div><div class="note">Unika personer.</div></article>
+      <article class="card"><div class="label">Spend</div><div class="value">176,61 kr</div><div class="note">Annonskostnad för perioden.</div></article>
+      <article class="card"><div class="label">Impressions</div><div class="value">8 485</div><div class="note">Visningar.</div></article>
+      <article class="card"><div class="label">Reach</div><div class="value">4 195</div><div class="note">Unika personer.</div></article>
       <article class="card"><div class="label">Link clicks</div><div class="value red">27</div><div class="note">Klick mot sidan.</div></article>
-      <article class="card"><div class="label">CTR</div><div class="value red">0,40%</div><div class="note">Scroll-stop signal.</div></article>
-      <article class="card"><div class="label">CPC</div><div class="value">5,14 kr</div><div class="note">Kostnad per klick.</div></article>
-      <article class="card"><div class="label">Purchases</div><div class="value green">0</div><div class="note">Köp enligt Meta.</div></article>
-      <article class="card"><div class="label">Cost / purchase</div><div class="value">-</div><div class="note">Om purchase-data finns.</div></article>
+      <article class="card"><div class="label">CTR</div><div class="value red">0,32%</div><div class="note">Hur många som klickar efter att ha sett annonsen.</div></article>
+      <article class="card"><div class="label">CPC</div><div class="value">6,54 kr</div><div class="note">Vad varje klick kostar.</div></article>
+      <article class="card"><div class="label">Purchases</div><div class="value red">0</div><div class="note">Antal köp som Meta har registrerat.</div></article>
+      <article class="card"><div class="label">Cost / purchase</div><div class="value">-</div><div class="note">Kostnad per köp när köpdata finns.</div></article>
+      <article class="card"><div class="label">ROAS</div><div class="value">-</div><div class="note">Hur mycket försäljning vi fått tillbaka jämfört med annonskostnaden.</div></article>
     </section>
 
-    <section class="section">
-      <h2>Diagnosis</h2>
-      <p>CTR is weak. Fix creative, hook, and first line before scaling spend.</p>
-    </section>
+    <section class="section"><h2>Top Ad Today</h2>
+      <div class="top-card">
+        <div><div class="label">Top Ad Today</div><h3>Hook 3 — Transformation</h3><p>För lite data för beslut.</p></div>
+        <div class="top-grid">
+          <span><b>Campaign</b>Starter Bundle - Sales - Jun 2026</span><span><b>Ad set</b>Kvinnor 25-38 | USA/UK/CA/AU | Purchase</span>
+          <span><b>Spend</b>51,18 kr</span><span><b>Impressions</b>85</span>
+          <span><b>Link clicks</b>4</span><span><b>CTR</b>8,24%</span>
+          <span><b>CPC</b>7,31 kr</span><span><b>Purchases</b>0</span>
+        </div>
+        <p class="meaning">Den här annonsen har starkast klicksignal just nu, men saknar fortfarande köpdata.</p>
+      </div></section>
+
+    <section class="section"><h2>Ad Performance Breakdown</h2><p class="metric-help">Tabellen visar varje annons på annonsnivå och översätter siffrorna till ett enkelt beslut.</p><div class="table-wrap"><table><thead><tr><th>Ad name</th><th>Campaign</th><th>Ad set</th><th>Spend</th><th>Impressions</th><th>Reach</th><th>Link clicks</th><th>CTR</th><th>CPC</th><th>Purchases</th><th>Cost / purchase</th><th>Decision</th><th>Meaning</th></tr></thead><tbody>
+          <tr>
+            <td data-label="Ad name"><strong>Starter Bundle - Story Hook - Facebook Feed</strong></td>
+            <td data-label="Campaign">Starter Bundle - Traffic - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Instagram+Facebook Feed</td>
+            <td data-label="Spend">33,85 kr</td>
+            <td data-label="Impressions">8 229</td>
+            <td data-label="Reach">3 964</td>
+            <td data-label="Link clicks">18</td>
+            <td data-label="CTR">0,22%</td>
+            <td data-label="CPC">1,88 kr</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge danger">Weak hook</span></td>
+            <td data-label="Meaning">Folk klickar lite, men hooken är svag.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 1 — Identitet</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">6,45 kr</td>
+            <td data-label="Impressions">10</td>
+            <td data-label="Reach">10</td>
+            <td data-label="Link clicks">0</td>
+            <td data-label="CTR">0,00%</td>
+            <td data-label="CPC">-</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge muted">Too little data</span></td>
+            <td data-label="Meaning">För lite data för beslut.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 2 — Tillåtelse</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">82,95 kr</td>
+            <td data-label="Impressions">156</td>
+            <td data-label="Reach">138</td>
+            <td data-label="Link clicks">5</td>
+            <td data-label="CTR">5,77%</td>
+            <td data-label="CPC">9,22 kr</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge warning">Keep testing</span></td>
+            <td data-label="Meaning">Bra klicksignal, fortsätt testa.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 3 — Transformation</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">51,18 kr</td>
+            <td data-label="Impressions">85</td>
+            <td data-label="Reach">79</td>
+            <td data-label="Link clicks">4</td>
+            <td data-label="CTR">8,24%</td>
+            <td data-label="CPC">7,31 kr</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge muted">Too little data</span></td>
+            <td data-label="Meaning">För lite data för beslut.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 3v2 — Kontrasten (Transformation)</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">0,26 kr</td>
+            <td data-label="Impressions">3</td>
+            <td data-label="Reach">2</td>
+            <td data-label="Link clicks">0</td>
+            <td data-label="CTR">0,00%</td>
+            <td data-label="CPC">-</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge muted">Too little data</span></td>
+            <td data-label="Meaning">För lite data för beslut.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 3v3 — Det specifika löftet (Transformation)</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">1,69 kr</td>
+            <td data-label="Impressions">1</td>
+            <td data-label="Reach">1</td>
+            <td data-label="Link clicks">0</td>
+            <td data-label="CTR">0,00%</td>
+            <td data-label="CPC">-</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge muted">Too little data</span></td>
+            <td data-label="Meaning">För lite data för beslut.</td>
+          </tr>
+
+          <tr>
+            <td data-label="Ad name"><strong>Hook 3v4 — Känslan av lättnad (Transformation)</strong></td>
+            <td data-label="Campaign">Starter Bundle - Sales - Jun 2026</td>
+            <td data-label="Ad set">Kvinnor 25-38 | USA/UK/CA/AU | Purchase</td>
+            <td data-label="Spend">0,23 kr</td>
+            <td data-label="Impressions">1</td>
+            <td data-label="Reach">1</td>
+            <td data-label="Link clicks">0</td>
+            <td data-label="CTR">0,00%</td>
+            <td data-label="CPC">-</td>
+            <td data-label="Purchases">0</td>
+            <td data-label="Cost / purchase">-</td>
+            <td data-label="Decision"><span class="badge muted">Too little data</span></td>
+            <td data-label="Meaning">För lite data för beslut.</td>
+          </tr></tbody></table></div></section>
+
+    <section class="section"><h2>Creative Diagnosis</h2><ul class="diag-list"><li>Starkast signal just nu: Hook 3 — Transformation.</li><li>Svagast signal just nu: Hook 1 — Identitet.</li><li>CTR verkar vara problemet: få personer klickar efter att ha sett annonsen.</li><li>Eftersom klick finns men köp saknas bör produkt­sida, erbjudande, pris, förtroende och checkout kontrolleras utan att ändra något i Meta.</li><li>Förbered nya annonser i pausat läge så att nya vinklar finns redo om signalen inte förbättras.</li></ul></section>
+
+    <section class="section"><h2>Så läser du rapporten</h2><ul class="read-list"><li>Hög CTR betyder att hooken eller bilden får uppmärksamhet.</li><li>Klick men inga köp kan betyda att produktsida, erbjudande, pris, förtroende eller checkout behöver kontrolleras.</li><li>Inga klick betyder ofta att creative eller hook är svag.</li><li>Köp är den starkaste signalen.</li><li>Skala inte utan köp.</li></ul></section>
+
+    <section class="section action"><h2>Nästa steg</h2><div class="recommendation">Recommendation: KEEP RUNNING</div><p><strong>Meaning:</strong><br>Fortsätt köra lite till eftersom datan fortfarande är för liten.</p></section>
 
     <p class="footer">Generated for Lajo · The Clarity Shop · <a href="archive/2026-06-21.html">Open archived report</a></p>
   </main>
