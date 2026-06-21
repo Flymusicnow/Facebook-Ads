@@ -2,12 +2,12 @@
 """
 Generate a mobile-friendly Meta Ads HTML report.
 
-Live mode:
-  Set META_ACCESS_TOKEN and META_AD_ACCOUNT_ID as GitHub secrets.
-  Then run this script manually or through GitHub Actions.
+Required GitHub secrets:
+  META_ACCESS_TOKEN
+  META_AD_ACCOUNT_ID
 
-Fallback mode:
-  If secrets are missing, the script still generates a safe static report.
+Optional:
+  META_API_VERSION, defaults to v25.0
 """
 
 from __future__ import annotations
@@ -23,8 +23,6 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_REPORT_DATA = {
-    "date": "2026-06-21",
-    "updated_at": "Static fallback",
     "brand": "The Clarity Shop",
     "campaign": "Sales / Purchase test",
     "spend": "10,92 kr",
@@ -35,13 +33,12 @@ DEFAULT_REPORT_DATA = {
     "cpc": "3,64 kr",
     "purchases": "0",
     "cost_per_purchase": "-",
-    "diagnosis": "Static fallback: add META_ACCESS_TOKEN and META_AD_ACCOUNT_ID to GitHub secrets to pull live Meta Ads data.",
-    "mode": "Static fallback",
 }
 
 
 def env(name: str, default: str = "") -> str:
-    return os.environ.get(name, default).strip()
+    value = os.environ.get(name, "").strip()
+    return value if value else default
 
 
 def now_date() -> str:
@@ -89,7 +86,7 @@ def compact(value: str, limit: int = 900) -> str:
 
 def parse_meta_error(body: str) -> str:
     if not body:
-        return "Meta returned an empty error body. Check token, permissions, and ad account ID."
+        return "Meta returned an empty error body."
     try:
         payload = json.loads(body)
     except json.JSONDecodeError:
@@ -107,6 +104,17 @@ def parse_meta_error(body: str) -> str:
     return compact(" | ".join(parts) if parts else body)
 
 
+def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str, str]:
+    return DEFAULT_REPORT_DATA | {
+        "date": now_date(),
+        "updated_at": now_stamp(),
+        "brand": brand,
+        "campaign": campaign,
+        "diagnosis": diagnosis,
+        "mode": mode,
+    }
+
+
 def get_action_value(actions: list[dict[str, Any]] | None, names: tuple[str, ...]) -> float:
     if not actions:
         return 0.0
@@ -119,21 +127,20 @@ def get_action_value(actions: list[dict[str, Any]] | None, names: tuple[str, ...
     return 0.0
 
 
-def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str, str]:
-    return DEFAULT_REPORT_DATA | {
-        "brand": brand,
-        "campaign": campaign,
-        "date": now_date(),
-        "updated_at": now_stamp(),
-        "diagnosis": diagnosis,
-        "mode": mode,
-    }
+def diagnose(ctr_value: float, purchases: float) -> str:
+    if purchases > 0:
+        return "Purchase signal found. Next step: check cost per purchase, offer strength, and scaling room."
+    if ctr_value < 0.5:
+        return "CTR is weak. Fix creative, hook, and first line before scaling spend."
+    if ctr_value < 1.0:
+        return "CTR is acceptable but not strong. Test sharper hooks and compare landing page behavior."
+    return "CTR is strong enough to inspect checkout, offer, pricing, and purchase conversion."
 
 
 def fetch_meta_data() -> dict[str, str]:
     access_token = env("META_ACCESS_TOKEN")
     ad_account_id = env("META_AD_ACCOUNT_ID")
-    api_version = env("META_API_VERSION", "v20.0")
+    api_version = env("META_API_VERSION", "v25.0")
     brand = env("REPORT_BRAND", "The Clarity Shop")
     campaign = env("REPORT_CAMPAIGN", "Sales / Purchase test")
 
@@ -180,7 +187,7 @@ def fetch_meta_data() -> dict[str, str]:
         meta_error = parse_meta_error(body)
         diagnosis = (
             f"Meta API HTTP {error.code}: {meta_error}. "
-            f"Checked ad account: {raw_ad_account_id}. "
+            f"API version: {api_version}. Checked ad account: {raw_ad_account_id}. "
             "Fix usually: token permission, token expiry, wrong ad account ID, or token not connected to this Business Manager."
         )
         print(diagnosis)
@@ -232,16 +239,6 @@ def fetch_meta_data() -> dict[str, str]:
     }
 
 
-def diagnose(ctr_value: float, purchases: float) -> str:
-    if purchases > 0:
-        return "Purchase signal found. Next step: check cost per purchase, offer strength, and scaling room."
-    if ctr_value < 0.5:
-        return "CTR is weak. Fix creative, hook, and first line before scaling spend."
-    if ctr_value < 1.0:
-        return "CTR is acceptable but not strong. Test sharper hooks and compare landing page behavior."
-    return "CTR is strong enough to inspect checkout, offer, pricing, and purchase conversion."
-
-
 def render_html(data: dict[str, str]) -> str:
     return f"""<!doctype html>
 <html lang=\"sv\">
@@ -258,7 +255,6 @@ def render_html(data: dict[str, str]) -> str:
       --muted: #667085;
       --line: rgba(151, 124, 80, 0.25);
       --gold: #b99255;
-      --rose: #c88f8f;
       --danger: #b54747;
       --ok: #2f7d57;
       --shadow: 0 18px 50px rgba(33, 25, 15, 0.10);
@@ -268,39 +264,28 @@ def render_html(data: dict[str, str]) -> str:
     body {{
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(200, 143, 143, 0.18), transparent 34%),
-        radial-gradient(circle at top right, rgba(185, 146, 85, 0.18), transparent 34%),
-        var(--bg);
+      background: radial-gradient(circle at top left, rgba(200,143,143,.18), transparent 34%), radial-gradient(circle at top right, rgba(185,146,85,.18), transparent 34%), var(--bg);
       color: var(--ink);
       line-height: 1.5;
     }}
     .wrap {{ width: min(1120px, 100%); margin: 0 auto; padding: 24px 16px 48px; }}
-    .hero {{
-      background: linear-gradient(135deg, rgba(255, 250, 242, 0.96), rgba(247, 239, 225, 0.94));
-      border: 1px solid var(--line);
-      border-radius: 32px;
-      box-shadow: var(--shadow);
-      padding: 28px;
-      position: relative;
-      overflow: hidden;
-    }}
-    .eyebrow {{ text-transform: uppercase; letter-spacing: 0.16em; color: var(--gold); font-size: 12px; font-weight: 800; margin: 0 0 12px; }}
-    h1 {{ font-family: Georgia, \"Times New Roman\", serif; font-size: clamp(34px, 7vw, 72px); line-height: 0.95; margin: 0; max-width: 800px; }}
+    .hero {{ background: linear-gradient(135deg, rgba(255,250,242,.96), rgba(247,239,225,.94)); border: 1px solid var(--line); border-radius: 32px; box-shadow: var(--shadow); padding: 28px; }}
+    .eyebrow {{ text-transform: uppercase; letter-spacing: .16em; color: var(--gold); font-size: 12px; font-weight: 800; margin: 0 0 12px; }}
+    h1 {{ font-family: Georgia, \"Times New Roman\", serif; font-size: clamp(34px, 7vw, 72px); line-height: .95; margin: 0; max-width: 800px; }}
     h2 {{ font-family: Georgia, \"Times New Roman\", serif; font-size: 30px; margin: 0 0 12px; }}
     .sub {{ color: var(--muted); max-width: 780px; margin: 18px 0 0; font-size: 17px; }}
     .status-row {{ display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }}
-    .pill {{ border: 1px solid var(--line); background: rgba(255, 255, 255, 0.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }}
+    .pill {{ border: 1px solid var(--line); background: rgba(255,255,255,.55); border-radius: 999px; padding: 9px 13px; color: var(--muted); font-size: 13px; font-weight: 700; }}
     .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 18px; }}
-    .card, .section {{ background: rgba(255, 250, 242, 0.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33, 25, 15, 0.06); }}
+    .card, .section {{ background: rgba(255,250,242,.90); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(33,25,15,.06); }}
     .section {{ margin-top: 18px; border-radius: 28px; padding: 22px; }}
-    .label {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.10em; font-weight: 800; margin-bottom: 8px; }}
-    .value {{ font-size: 31px; font-weight: 900; letter-spacing: -0.03em; }}
+    .label {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .10em; font-weight: 800; margin-bottom: 8px; }}
+    .value {{ font-size: 31px; font-weight: 900; letter-spacing: -.03em; }}
     .note {{ color: var(--muted); font-size: 13px; margin-top: 6px; }}
     .red {{ color: var(--danger); font-weight: 900; }}
     .green {{ color: var(--ok); font-weight: 900; }}
     .footer {{ color: var(--muted); text-align: center; font-size: 13px; padding: 24px 0 0; }}
-    a {{ color: inherit; text-decoration-color: rgba(185, 146, 85, 0.55); text-underline-offset: 4px; }}
+    a {{ color: inherit; text-decoration-color: rgba(185,146,85,.55); text-underline-offset: 4px; }}
     @media (max-width: 820px) {{ .wrap {{ padding: 14px 12px 38px; }} .hero {{ padding: 22px; border-radius: 26px; }} .grid {{ grid-template-columns: repeat(2, 1fr); }} .value {{ font-size: 27px; }} h2 {{ font-size: 26px; }} }}
     @media (max-width: 440px) {{ .grid {{ grid-template-columns: 1fr; }} .section {{ padding: 18px; }} }}
   </style>
