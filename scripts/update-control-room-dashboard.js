@@ -37,6 +37,24 @@ const PRODUCT_ORDER = [
   "Money Clarity Reset",
 ];
 
+const PRODUCT_PATTERNS = [
+  ["Situationship Exit Strategy", ["situationship exit strategy", "situationship"]],
+  ["Self-Worth Reset", ["self-worth reset", "self worth reset", "selfworth reset"]],
+  ["Clarity Starter Bundle", ["clarity starter bundle", "starter bundle"]],
+  ["Full Clarity Library", ["full clarity library", "six resets", "total clarity"]],
+  ["Money Clarity Reset", ["money clarity reset", "money reset"]],
+  ["Parenting Reset", ["parenting reset"]],
+  ["Health & Wellness Reset", ["health & wellness reset", "health and wellness reset", "wellness reset"]],
+  ["Career & Business Reset", ["career & business reset", "career and business reset", "career reset"]],
+];
+
+const PLATFORM_ACCOUNTS = {
+  instagram: "@theclarityshopdigital",
+  facebook: "The Clarity Shop",
+  tiktok: "@theclarityshop",
+  youtube: "YouTube Shorts",
+};
+
 const FALLBACK_META = {
   mode: "fallback",
   spend: "28,29 kr",
@@ -90,6 +108,59 @@ function actionValue(actions, names) {
   if (!Array.isArray(actions)) return 0;
   const item = actions.find((action) => names.includes(action.action_type));
   return Number(item?.value || 0);
+}
+
+function firstNonEmpty(...values) {
+  return values.find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+}
+
+function nestedValue(source, paths) {
+  for (const pathSpec of paths) {
+    const value = pathSpec.split(".").reduce((current, key) => {
+      if (current === undefined || current === null) return undefined;
+      if (Array.isArray(current) && /^\d+$/.test(key)) return current[Number(key)];
+      return current[key];
+    }, source);
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return undefined;
+}
+
+function formatStockholmTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Stockholm",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(date).map((part) => [part.type, part.value])
+  );
+  return `${Number(parts.day)} ${parts.month} ${parts.year} ${parts.hour}:${parts.minute}`;
+}
+
+function inferProductFocus(...values) {
+  const haystack = values.filter(Boolean).join(" ").toLowerCase();
+  const match = PRODUCT_PATTERNS.find(([, terms]) => terms.some((term) => haystack.includes(term)));
+  return match ? match[0] : "";
+}
+
+function inferMediaType(...values) {
+  const haystack = values.flat().filter(Boolean).join(" ").toLowerCase().split("?")[0];
+  if (haystack.includes("video") || /\.(mp4|mov|webm|m4v)(?:$|[#?&])?/.test(haystack)) return "video";
+  if (haystack.includes("image/png") || /\.png(?:$|[#?&])?/.test(haystack)) return "image/png";
+  if (haystack.includes("image/jpeg") || haystack.includes("image/jpg") || /\.(jpg|jpeg)(?:$|[#?&])?/.test(haystack)) return "image/jpeg";
+  if (haystack.includes("image")) return "image";
+  return "";
+}
+
+function platformAccount(platform) {
+  return PLATFORM_ACCOUNTS[String(platform || "").toLowerCase()] || "";
 }
 
 async function fetchMeta(env, fetchImpl) {
@@ -172,14 +243,36 @@ async function fetchMeta(env, fetchImpl) {
 }
 
 function normalizeBlotatoItem(item) {
+  const platform = firstNonEmpty(item.platform, item.channel, item.network, nestedValue(item, ["account.platform"])) || "Platform saknas";
+  const text = firstNonEmpty(item.text, item.caption, item.content, item.body, item.description, nestedValue(item, ["post.text", "post.caption"])) || "";
+  const mediaUrls = item.mediaUrls || item.media_urls || item.media || item.assets || item.files || [];
+  const mediaUrl = Array.isArray(mediaUrls) ? mediaUrls.map((media) => typeof media === "string" ? media : firstNonEmpty(media.url, media.src, media.href, media.fileUrl, media.file_url)) : mediaUrls;
+  const mediaType = firstNonEmpty(
+    item.mediaType,
+    item.media_type,
+    item.mimeType,
+    item.mime_type,
+    nestedValue(item, ["media.0.type", "media.0.mimeType", "assets.0.type", "assets.0.mimeType"]),
+    inferMediaType(mediaUrl)
+  );
+  const product = firstNonEmpty(
+    item.product,
+    item.productFocus,
+    item.product_focus,
+    inferProductFocus(text, item.title, mediaUrl)
+  );
+  const state = firstNonEmpty(item.status, item.risk, item.riskLabel, item.risk_label, nestedValue(item, ["state.type"])) || "";
+  const status = String(platform).toLowerCase().includes("tiktok") && String(mediaType).startsWith("image")
+    ? "Needs video later"
+    : (String(state).toLowerCase().includes("scheduled") ? "Keep" : state || "Check media");
   return {
-    time: item.time || item.scheduledAt || item.scheduled_at || item.date || "Tid saknas",
-    platform: item.platform || item.channel || item.network || "Platform saknas",
-    account: item.account || item.handle || item.pageName || item.page_name || "",
-    product: item.product || item.productFocus || item.product_focus || "Produkt saknas",
+    time: formatStockholmTime(firstNonEmpty(item.time, item.scheduledAt, item.scheduled_at, item.postTime, item.post_time, item.date)) || "Tid saknas",
+    platform,
+    account: firstNonEmpty(item.account, item.handle, item.pageName, item.page_name, nestedValue(item, ["account.name", "account.handle"]), platformAccount(platform)) || "",
+    product: product || "Produkt saknas",
     id: String(item.id || item.postId || item.post_id || "-"),
-    mediaType: item.mediaType || item.media_type || item.mimeType || item.mime_type || "unknown",
-    status: item.status || item.risk || item.riskLabel || item.risk_label || "Check media",
+    mediaType: mediaType || "unknown",
+    status,
   };
 }
 
@@ -204,8 +297,13 @@ async function fetchBlotato(env, fetchImpl) {
     const payload = await response.json();
     const rawItems = Array.isArray(payload) ? payload : payload.posts || payload.data || payload.items || [];
     if (!Array.isArray(rawItems) || rawItems.length === 0) throw new Error("Blotato returned no schedule rows");
+    const scheduledItems = rawItems.filter((item) => {
+      const state = String(nestedValue(item, ["state.type"]) || item.state || item.status || "").toLowerCase();
+      return state ? state.includes("scheduled") : true;
+    });
+    if (scheduledItems.length === 0) throw new Error("Blotato returned no scheduled rows");
     return {
-      data: { mode: "live", schedule: rawItems.map(normalizeBlotatoItem) },
+      data: { mode: "live", schedule: scheduledItems.map(normalizeBlotatoItem) },
       status: "Blotato live schedule loaded.",
     };
   } catch (error) {

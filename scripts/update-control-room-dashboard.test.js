@@ -47,3 +47,61 @@ test("renders and writes latest plus dated archive", async () => {
   assert.ok(existsSync(written.archivePath));
   assert.equal(readFileSync(written.latestPath, "utf8"), readFileSync(written.archivePath, "utf8"));
 });
+
+test("maps Blotato live schedule fields into readable dashboard rows", async () => {
+  const data = await buildControlRoomData({
+    env: {
+      BLOTATO_TOKEN: "test-token",
+    },
+    today: "2026-06-22",
+    now: new Date("2026-06-22T10:00:00.000Z"),
+    fetchImpl: async (url) => {
+      if (String(url).includes("blotato")) {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [
+              {
+                id: "1847511",
+                platform: "tiktok",
+                text: "One week. Six resets. Total clarity. The Full Clarity Library — link in bio.",
+                mediaUrls: ["https://cdn.example.test/full-library.jpeg"],
+                postTime: "2026-06-25T09:00:00.000Z",
+                state: { type: "scheduled" },
+              },
+              {
+                id: "4863347",
+                platform: "instagram",
+                text: "Get clear on your next step with Money Clarity Reset.",
+                mediaUrls: ["https://cdn.example.test/money-reset.mp4"],
+                postTime: "2026-06-26T08:30:00.000Z",
+                state: { type: "scheduled" },
+              },
+              {
+                id: "published-1",
+                platform: "facebook",
+                text: "The Career & Business Reset helps you choose your next step.",
+                mediaUrls: ["https://cdn.example.test/career.png"],
+                postTime: "2026-06-20T08:30:00.000Z",
+                state: { type: "published" },
+              },
+            ],
+          }),
+        };
+      }
+      throw new Error("Meta should fall back in this test");
+    },
+  });
+
+  assert.equal(data.organic.mode, "live");
+  assert.equal(data.organic.schedule.length, 2);
+  assert.equal(data.organic.schedule[0].time, "25 June 2026 11:00");
+  assert.equal(data.organic.schedule[0].account, "@theclarityshop");
+  assert.equal(data.organic.schedule[0].product, "Full Clarity Library");
+  assert.equal(data.organic.schedule[0].mediaType, "image/jpeg");
+  assert.equal(data.organic.schedule[0].status, "Needs video later");
+  assert.equal(data.organic.schedule[1].time, "26 June 2026 10:30");
+  assert.equal(data.organic.schedule[1].product, "Money Clarity Reset");
+  assert.equal(data.organic.schedule[1].mediaType, "video");
+  assert.equal(data.organic.schedule[1].status, "Keep");
+});
