@@ -37,14 +37,14 @@ DEFAULT_REPORT_DATA = {
 }
 
 PERIOD_LABELS = {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "last_7d": "Last 7 days",
-    "last_14d": "Last 14 days",
-    "last_30d": "Last 30 days",
-    "this_month": "This month",
-    "last_month": "Last month",
-    "maximum": "Maximum",
+    "today": "Idag",
+    "yesterday": "Igår",
+    "last_7d": "Senaste 7 dagarna",
+    "last_14d": "Senaste 14 dagarna",
+    "last_30d": "Senaste 30 dagarna",
+    "this_month": "Denna månad",
+    "last_month": "Förra månaden",
+    "maximum": "All data",
 }
 
 PURCHASE_ACTIONS = ("purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase")
@@ -307,113 +307,188 @@ def fetch_meta_data() -> dict[str, Any]:
     }
 
 
-def render_ad_rows(ads: list[dict[str, Any]]) -> str:
-    if not ads:
-        return '<tr><td colspan="13">Ingen annonsdata på annonsnivå ännu.</td></tr>'
+def swedish_ad_status(ad: dict[str, Any]) -> tuple[str, str]:
+    if ad["purchases_raw"] > 0:
+        return "Vinnare", "positive"
+    if ad["impressions_raw"] < 20:
+        return "För lite data", "muted"
+    if ad["link_clicks_raw"] > 0:
+        return "Får klick", "warning"
+    if ad["impressions_raw"] > 0:
+        return "Svag signal", "danger"
+    return "För lite data", "muted"
+
+
+def status_for(kind: str, value: float) -> tuple[str, str]:
+    if kind == "impressions":
+        if value > 100:
+            return "Bra", "positive"
+        if value >= 20:
+            return "Vänta", "warning"
+        return "För lite data", "muted"
+    if kind == "clicks":
+        if value > 5:
+            return "Bra", "positive"
+        if value >= 1:
+            return "Vänta", "warning"
+        return "För lite data", "muted"
+    if value > 0:
+        return "Bra", "positive"
+    return "Problem", "danger"
+
+
+def bar_width(value: float, max_value: float) -> int:
+    if max_value <= 0 or value <= 0:
+        return 0
+    return max(4, min(100, round(value / max_value * 100)))
+
+
+def simple_meaning(totals: dict[str, Any]) -> list[str]:
+    impressions = totals.get("impressions_raw", 0)
+    clicks = totals.get("clicks_raw", 0)
+    purchases = totals.get("purchases_raw", 0)
+    return [
+        "Folk ser annonserna." if impressions > 0 else "Nästan ingen ser annonserna ännu.",
+        "Några klickar." if clicks > 0 else "Ingen klickar ännu.",
+        "Köp har kommit in." if purchases > 0 else "Ingen har köpt ännu.",
+    ]
+
+
+def next_step_text(totals: dict[str, Any]) -> str:
+    purchases = totals.get("purchases_raw", 0)
+    clicks = totals.get("clicks_raw", 0)
+    if purchases == 0 and clicks > 0:
+        return "Fortsätt samla data. Förbered nya annonser, men aktivera dem inte ännu."
+    if purchases > 0:
+        return "Fortsätt köra. Titta om köpen fortsätter komma in."
+    return "Fortsätt samla data. Vänta innan du ändrar något."
+
+
+def render_status_cards(data: dict[str, Any]) -> str:
+    cards = [
+        ("Ser folk annonsen?", "Visningar", data["impressions"], data["impressions_raw"], "Folk ser annonserna", "impressions"),
+        ("Klickar folk?", "Klick", data["link_clicks"], data["clicks_raw"], "Folk klickar", "clicks"),
+        ("Köper folk?", "Köp", data["purchases"], data["purchases_raw"], "Köp har kommit in" if data["purchases_raw"] > 0 else "Inga köp ännu", "purchases"),
+    ]
+    html_cards = []
+    for question, label, value, raw, meaning, kind in cards:
+        word, cls = status_for(kind, raw)
+        html_cards.append(f'''
+      <article class="big-card {cls}" aria-label="{safe(question)} {safe(value)}. {safe(meaning)}. Status {safe(word)}.">
+        <div class="card-top"><span>{safe(question)}</span><strong>{safe(word)}</strong></div>
+        <div class="big-value">{safe(value)}</div>
+        <div class="small-label">{safe(label)}</div>
+        <p>{safe(meaning)}</p>
+      </article>''')
+    return "".join(html_cards)
+
+
+def render_funnel(data: dict[str, Any]) -> str:
+    items = [("Visningar", data["impressions"], data["impressions_raw"]), ("Klick", data["link_clicks"], data["clicks_raw"]), ("Köp", data["purchases"], data["purchases_raw"])]
+    max_value = max([raw for _, _, raw in items] + [1])
     rows = []
-    for ad in ads:
-        rows.append(f"""
-          <tr>
-            <td data-label="Ad name"><strong>{safe(ad['ad_name'])}</strong></td>
-            <td data-label="Campaign">{safe(ad['campaign_name'])}</td>
-            <td data-label="Ad set">{safe(ad['adset_name'])}</td>
-            <td data-label="Spend">{safe(ad['spend'])}</td>
-            <td data-label="Impressions">{safe(ad['impressions'])}</td>
-            <td data-label="Reach">{safe(ad['reach'])}</td>
-            <td data-label="Link clicks">{safe(ad['link_clicks'])}</td>
-            <td data-label="CTR">{safe(ad['ctr'])}</td>
-            <td data-label="CPC">{safe(ad['cpc'])}</td>
-            <td data-label="Purchases">{safe(ad['purchases'])}</td>
-            <td data-label="Cost / purchase">{safe(ad['cost_per_purchase'])}</td>
-            <td data-label="Decision"><span class="badge {safe(ad['decision_class'])}">{safe(ad['decision'])}</span></td>
-            <td data-label="Meaning">{safe(ad['meaning'])}</td>
-          </tr>""")
-    return "\n".join(rows)
+    for label, display, raw in items:
+        width = bar_width(raw, max_value)
+        rows.append(f'''
+        <div class="funnel-row">
+          <div class="funnel-label"><strong>{safe(label)}</strong><span>{safe(display)}</span></div>
+          <div class="bar" role="img" aria-label="{safe(label)}: {safe(display)}"><span style="width:{width}%"></span></div>
+          <p class="sr-summary">{safe(label)} är {safe(display)}.</p>
+        </div>''')
+    return "".join(rows)
 
 
 def render_top_ad(ad: dict[str, Any] | None) -> str:
     if not ad:
-        return '<div class="top-empty">No clear top ad yet.</div>'
-    return f"""
-      <div class="top-card">
-        <div><div class="label">Top Ad Today</div><h3>{safe(ad['ad_name'])}</h3><p>{safe(ad['meaning'])}</p></div>
-        <div class="top-grid">
-          <span><b>Campaign</b>{safe(ad['campaign_name'])}</span><span><b>Ad set</b>{safe(ad['adset_name'])}</span>
-          <span><b>Spend</b>{safe(ad['spend'])}</span><span><b>Impressions</b>{safe(ad['impressions'])}</span>
-          <span><b>Link clicks</b>{safe(ad['link_clicks'])}</span><span><b>CTR</b>{safe(ad['ctr'])}</span>
-          <span><b>CPC</b>{safe(ad['cpc'])}</span><span><b>Purchases</b>{safe(ad['purchases'])}</span>
-        </div>
-        <p class="meaning">Den här annonsen har starkast klicksignal just nu, men saknar fortfarande köpdata.</p>
-      </div>"""
+        return '<div class="empty-card">Ingen tydlig vinnare ännu.</div>'
+    if ad["purchases_raw"] > 0:
+        meaning = "Den här annonsen får bäst reaktion just nu och har köp."
+    else:
+        meaning = "Den här annonsen får bäst reaktion just nu, men den har fortfarande inga köp."
+    return f'''
+      <article class="best-card" aria-label="Bäst just nu: {safe(ad['ad_name'])}">
+        <h3>{safe(ad['ad_name'])}</h3>
+        <div class="mini-metrics"><span>Klick <b>{safe(ad['link_clicks'])}</b></span><span>CTR <b>{safe(ad['ctr'])}</b></span><span>Spend <b>{safe(ad['spend'])}</b></span></div>
+        <p>{safe(meaning)}</p>
+      </article>'''
+
+
+def render_ad_cards(ads: list[dict[str, Any]]) -> str:
+    if not ads:
+        return '<div class="empty-card">Ingen annonsdata på annonsnivå ännu.</div>'
+    max_clicks = max([ad["link_clicks_raw"] for ad in ads] + [1])
+    cards = []
+    for ad in ads:
+        status, cls = swedish_ad_status(ad)
+        width = bar_width(ad["link_clicks_raw"], max_clicks)
+        cards.append(f'''
+      <article class="ad-card" aria-label="Annons {safe(ad['ad_name'])}. Klick {safe(ad['link_clicks'])}. Köp {safe(ad['purchases'])}. Status {safe(status)}.">
+        <div class="ad-head"><h3>{safe(ad['ad_name'])}</h3><span class="badge {cls}">{safe(status)}</span></div>
+        <div class="ad-numbers"><span>Spend <b>{safe(ad['spend'])}</b></span><span>Klick <b>{safe(ad['link_clicks'])}</b></span><span>CTR <b>{safe(ad['ctr'])}</b></span><span>Köp <b>{safe(ad['purchases'])}</b></span></div>
+        <div class="tiny-bar" role="img" aria-label="Klickbar för {safe(ad['ad_name'])}: {safe(ad['link_clicks'])} klick"><span style="width:{width}%"></span></div>
+        <p class="sr-summary">Den här annonsen har {safe(ad['link_clicks'])} klick och status {safe(status)}.</p>
+      </article>''')
+    return "".join(cards)
 
 
 def render_html(data: dict[str, Any]) -> str:
-    diagnosis_items = "".join(f"<li>{safe(item)}</li>" for item in data.get("creative_diagnosis", []))
-    ad_rows = render_ad_rows(data.get("ads", []))
+    status_cards = render_status_cards(data)
+    funnel = render_funnel(data)
     top = render_top_ad(data.get("top_ad"))
+    ad_cards = render_ad_cards(data.get("ads", []))
+    meaning_items = "".join(f"<li>{safe(item)}</li>" for item in simple_meaning(data))
+    next_step = next_step_text(data)
     return f'''<!doctype html>
 <html lang="sv">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f6f1e8" />
-  <title>Meta Ads Report - {safe(data['brand'])}</title>
+  <title>Meta Ads Kontroll - {safe(data['brand'])}</title>
   <style>
-    :root {{ --bg:#f6f1e8; --panel:#fffaf2; --ink:#1f2933; --muted:#667085; --line:rgba(151,124,80,.24); --gold:#b99255; --danger:#b54747; --ok:#2f7d57; --warn:#c6782f; --soft:#e9dfcf; --shadow:0 18px 50px rgba(33,25,15,.10); --radius:24px; }}
-    * {{ box-sizing:border-box; }} body {{ margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:radial-gradient(circle at top left,rgba(200,143,143,.18),transparent 34%),radial-gradient(circle at top right,rgba(185,146,85,.20),transparent 34%),var(--bg); color:var(--ink); line-height:1.5; }}
-    .wrap {{ width:min(1180px,100%); margin:0 auto; padding:24px 16px 48px; }} .hero,.section,.card {{ background:rgba(255,250,242,.92); border:1px solid var(--line); box-shadow:var(--shadow); }}
-    .hero {{ border-radius:34px; padding:30px; }} .eyebrow {{ text-transform:uppercase; letter-spacing:.16em; color:var(--gold); font-size:12px; font-weight:900; margin:0 0 12px; }}
-    h1,h2,h3 {{ font-family:Georgia,"Times New Roman",serif; }} h1 {{ font-size:clamp(38px,7vw,76px); line-height:.95; margin:0; }} h2 {{ font-size:32px; margin:0 0 12px; }} h3 {{ font-size:30px; margin:4px 0 8px; }}
-    .sub,.note,.metric-help,.section p,.section li {{ color:var(--muted); }} .sub {{ max-width:780px; margin:18px 0 0; font-size:17px; }} .status-row {{ display:flex; flex-wrap:wrap; gap:10px; margin-top:22px; }} .pill {{ border:1px solid var(--line); background:rgba(255,255,255,.58); border-radius:999px; padding:9px 13px; color:var(--muted); font-size:13px; font-weight:800; }}
-    .period-menu {{ margin-top:16px; max-width:280px; }} .period-menu summary {{ list-style:none; cursor:pointer; border:1px solid var(--line); background:#fff; border-radius:999px; padding:11px 15px; font-weight:900; box-shadow:0 8px 24px rgba(33,25,15,.06); }} .period-menu summary::-webkit-details-marker {{ display:none; }} .period-list {{ margin-top:8px; background:#fffaf2; border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); padding:8px; display:grid; gap:6px; }} .period-list a {{ text-decoration:none; color:var(--ink); font-weight:800; padding:11px 12px; border-radius:14px; }} .period-list a:hover {{ background:rgba(185,146,85,.10); }}
-    .section {{ margin-top:18px; border-radius:28px; padding:24px; }} .summary-box {{ border-left:5px solid var(--gold); }} .grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:18px; }} .card {{ border-radius:var(--radius); padding:18px; }} .label {{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.10em; font-weight:900; margin-bottom:8px; }} .value {{ font-size:31px; font-weight:950; letter-spacing:-.03em; }} .metric-help {{ font-size:12px; margin-top:5px; }} .red,.danger {{ color:var(--danger); font-weight:900; }} .green,.positive {{ color:var(--ok); font-weight:900; }} .warning {{ color:var(--warn); font-weight:900; }} .muted {{ color:var(--muted); font-weight:900; }}
-    .top-card {{ display:grid; gap:18px; }} .top-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }} .top-grid span {{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:12px; color:var(--ink); }} .top-grid b {{ display:block; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; }} .meaning,.top-empty {{ background:rgba(47,125,87,.09); border:1px solid rgba(47,125,87,.22); border-radius:18px; padding:14px; color:var(--ok); font-weight:800; }}
-    .table-wrap {{ overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:22px; background:#fff; }} table {{ width:100%; border-collapse:collapse; min-width:1080px; }} th,td {{ text-align:left; padding:13px 12px; border-bottom:1px solid rgba(151,124,80,.16); vertical-align:top; font-size:14px; }} th {{ background:#f4eadb; color:#5d4d39; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }} .badge {{ display:inline-block; border-radius:999px; padding:7px 10px; background:rgba(102,112,133,.10); white-space:nowrap; }} .badge.positive {{ background:rgba(47,125,87,.12); }} .badge.warning {{ background:rgba(198,120,47,.14); }} .badge.danger {{ background:rgba(181,71,71,.12); }} .badge.muted {{ background:rgba(102,112,133,.12); }}
-    .read-list,.diag-list {{ margin:10px 0 0; padding-left:20px; }} .action {{ text-align:center; background:linear-gradient(135deg,#fffaf2,#f3e6d2); }} .recommendation {{ display:inline-block; margin:8px 0 10px; padding:14px 22px; border-radius:999px; background:var(--ink); color:#fff; font-weight:950; letter-spacing:.08em; }} .footer {{ color:var(--muted); text-align:center; font-size:13px; padding:24px 0 0; }} a {{ color:inherit; text-decoration-color:rgba(185,146,85,.55); text-underline-offset:4px; }}
-    @media (max-width:820px) {{ .wrap {{ padding:14px 12px 38px; }} .hero {{ padding:22px; border-radius:26px; }} .grid,.top-grid {{ grid-template-columns:repeat(2,1fr); }} .value {{ font-size:27px; }} h2 {{ font-size:26px; }} }}
-    @media (max-width:640px) {{ table {{ min-width:0; }} thead {{ display:none; }} tr {{ display:block; padding:12px; border-bottom:1px solid var(--line); }} td {{ display:grid; grid-template-columns:126px 1fr; gap:10px; border:0; padding:8px 0; }} td::before {{ content:attr(data-label); color:var(--muted); font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; }} .top-grid,.grid {{ grid-template-columns:1fr; }} .section {{ padding:18px; }} .period-menu {{ max-width:100%; }} }}
+    :root {{ --bg:#f6f1e8; --panel:#fffaf2; --ink:#17202a; --muted:#52606d; --line:#d8c6aa; --green:#1f7a4d; --orange:#a85f16; --red:#a43131; --grey:#64748b; --shadow:0 16px 42px rgba(42,31,18,.10); --radius:26px; }}
+    * {{ box-sizing:border-box; }} body {{ margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; }}
+    .wrap {{ width:min(980px,100%); margin:0 auto; padding:18px 14px 44px; }} .hero,.section,.big-card,.ad-card,.best-card,.empty-card,.action {{ background:var(--panel); border:1px solid var(--line); box-shadow:var(--shadow); }}
+    .hero {{ border-radius:32px; padding:26px; }} h1 {{ font-size:clamp(38px,9vw,72px); line-height:1; margin:0; letter-spacing:-.05em; }} h2 {{ font-size:clamp(25px,5vw,36px); margin:0 0 14px; letter-spacing:-.03em; }} h3 {{ font-size:20px; margin:0; }}
+    .sub {{ max-width:680px; color:var(--muted); font-size:19px; margin:12px 0 0; }} .pills {{ display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }} .pill {{ border:1px solid var(--line); background:#fff; border-radius:999px; padding:10px 13px; font-weight:800; color:#334155; }}
+    .section {{ margin-top:18px; border-radius:28px; padding:22px; }} .cards {{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }}
+    .big-card {{ border-radius:var(--radius); padding:22px; min-height:210px; border-width:3px; }} .big-card.positive {{ border-color:var(--green); }} .big-card.warning {{ border-color:var(--orange); }} .big-card.danger {{ border-color:var(--red); }} .big-card.muted {{ border-color:var(--grey); }}
+    .card-top {{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:18px; font-weight:900; }} .card-top strong,.badge {{ border-radius:999px; padding:7px 10px; color:#fff; font-size:14px; white-space:nowrap; }} .positive .card-top strong,.badge.positive {{ background:var(--green); }} .warning .card-top strong,.badge.warning {{ background:var(--orange); }} .danger .card-top strong,.badge.danger {{ background:var(--red); }} .muted .card-top strong,.badge.muted {{ background:var(--grey); }}
+    .big-value {{ font-size:clamp(48px,11vw,82px); font-weight:950; letter-spacing:-.06em; margin-top:22px; }} .small-label {{ color:var(--muted); font-weight:900; text-transform:uppercase; letter-spacing:.08em; }} .big-card p,.best-card p,.ad-card p,.action p {{ color:var(--muted); font-size:17px; margin:10px 0 0; }}
+    .funnel {{ display:grid; gap:16px; }} .funnel-label {{ display:flex; justify-content:space-between; gap:12px; font-size:20px; margin-bottom:8px; }} .funnel-label span {{ font-weight:950; }} .bar,.tiny-bar {{ width:100%; background:#e5ded2; border:1px solid var(--line); border-radius:999px; overflow:hidden; }} .bar {{ height:34px; }} .bar span,.tiny-bar span {{ display:block; height:100%; background:#1f7a4d; border-radius:999px; min-width:0; }} .tiny-bar {{ height:14px; margin-top:12px; }}
+    .best-card,.empty-card,.action {{ border-radius:26px; padding:22px; }} .mini-metrics,.ad-numbers {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }} .best-card .mini-metrics {{ grid-template-columns:repeat(3,1fr); }} .mini-metrics span,.ad-numbers span {{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:12px; color:var(--muted); }} .mini-metrics b,.ad-numbers b {{ display:block; color:var(--ink); font-size:22px; }}
+    .ad-list {{ display:grid; gap:12px; }} .ad-card {{ border-radius:24px; padding:18px; }} .ad-head {{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }} .badge {{ border:0; font-weight:900; }}
+    .meaning-list {{ margin:0; padding-left:22px; font-size:19px; }} .meaning-list li {{ margin:7px 0; }} .action {{ margin-top:18px; background:#17202a; color:#fff; text-align:center; }} .action h2,.action p {{ color:#fff; }} .action p {{ font-size:24px; font-weight:900; max-width:650px; margin:8px auto 0; }}
+    .footer {{ color:var(--muted); text-align:center; font-size:14px; padding:22px 0 0; }} a {{ color:inherit; text-underline-offset:5px; }} .sr-summary {{ font-size:14px!important; }}
+    @media (max-width:760px) {{ .cards,.mini-metrics,.ad-numbers,.best-card .mini-metrics {{ grid-template-columns:1fr; }} .hero,.section {{ padding:18px; border-radius:24px; }} .big-card {{ min-height:0; }} .ad-head {{ display:grid; }} .action p {{ font-size:20px; }} }}
   </style>
 </head>
 <body>
   <main class="wrap">
-    <section class="hero">
-      <p class="eyebrow">{safe(data['brand'])} · Meta Ads</p>
-      <h1>Daily Performance Report</h1>
-      <p class="sub">En lugn och pedagogisk daglig rapport för Lajo: vad som händer, vilka annonser som visar signal, och vilket nästa steg som är säkrast.</p>
-      <details class="period-menu"><summary>Period: {safe(data['period'])} ▾</summary><nav class="period-list"><a href="latest.html">Today</a><a href="yesterday.html">Yesterday</a><a href="last_7d.html">Last 7 days</a><a href="last_14d.html">Last 14 days</a><a href="last_30d.html">Last 30 days</a><a href="this_month.html">This month</a><a href="last_month.html">Last month</a><a href="maximum.html">Maximum</a></nav></details>
-      <div class="status-row"><span class="pill">Report date: {safe(data['date'])}</span><span class="pill">Updated: {safe(data['updated_at'])}</span><span class="pill">Mode: {safe(data['mode'])}</span><span class="pill">Campaign: {safe(data['campaign'])}</span></div>
+    <header class="hero">
+      <h1>Meta Ads Kontroll</h1>
+      <p class="sub">En enkel översikt över vad som händer med annonserna just nu.</p>
+      <div class="pills" aria-label="Rapportinfo"><span class="pill">Period: {safe(data['period'])}</span><span class="pill">Campaign: {safe(data['campaign'])}</span><span class="pill">Uppdaterad: {safe(data['updated_at'])}</span></div>
+    </header>
+
+    <section class="cards" aria-label="Tre enkla frågor om annonserna">{status_cards}
     </section>
 
-    <section class="section summary-box"><h2>Vad händer just nu?</h2><p><strong>{safe(data['summary'])}</strong> Det betyder att vi inte ska skala ännu. Nästa steg är att förstå vilken annons som får bäst respons och fortsätta samla data.</p></section>
+    <section class="section" aria-labelledby="funnel-title"><h2 id="funnel-title">Visningar → Klick → Köp</h2><div class="funnel">{funnel}</div></section>
 
-    <section class="grid" aria-label="Meta Ads key metrics">
-      <article class="card"><div class="label">Spend</div><div class="value">{safe(data['spend'])}</div><div class="note">Annonskostnad för perioden.</div></article>
-      <article class="card"><div class="label">Impressions</div><div class="value">{safe(data['impressions'])}</div><div class="note">Visningar.</div></article>
-      <article class="card"><div class="label">Reach</div><div class="value">{safe(data['reach'])}</div><div class="note">Unika personer.</div></article>
-      <article class="card"><div class="label">Link clicks</div><div class="value red">{safe(data['link_clicks'])}</div><div class="note">Klick mot sidan.</div></article>
-      <article class="card"><div class="label">CTR</div><div class="value red">{safe(data['ctr'])}</div><div class="note">Hur många som klickar efter att ha sett annonsen.</div></article>
-      <article class="card"><div class="label">CPC</div><div class="value">{safe(data['cpc'])}</div><div class="note">Vad varje klick kostar.</div></article>
-      <article class="card"><div class="label">Purchases</div><div class="value red">{safe(data['purchases'])}</div><div class="note">Antal köp som Meta har registrerat.</div></article>
-      <article class="card"><div class="label">Cost / purchase</div><div class="value">{safe(data['cost_per_purchase'])}</div><div class="note">Kostnad per köp när köpdata finns.</div></article>
-      <article class="card"><div class="label">ROAS</div><div class="value">{safe(data['roas'])}</div><div class="note">Hur mycket försäljning vi fått tillbaka jämfört med annonskostnaden.</div></article>
-    </section>
+    <section class="section" aria-labelledby="best-title"><h2 id="best-title">Bäst just nu</h2>{top}</section>
 
-    <section class="section"><h2>Top Ad Today</h2>{top}</section>
+    <section class="section" aria-labelledby="ads-title"><h2 id="ads-title">Annonser</h2><div class="ad-list">{ad_cards}</div></section>
 
-    <section class="section"><h2>Ad Performance Breakdown</h2><p class="metric-help">Tabellen visar varje annons på annonsnivå och översätter siffrorna till ett enkelt beslut.</p><div class="table-wrap"><table><thead><tr><th>Ad name</th><th>Campaign</th><th>Ad set</th><th>Spend</th><th>Impressions</th><th>Reach</th><th>Link clicks</th><th>CTR</th><th>CPC</th><th>Purchases</th><th>Cost / purchase</th><th>Decision</th><th>Meaning</th></tr></thead><tbody>{ad_rows}</tbody></table></div></section>
+    <section class="section" aria-labelledby="meaning-title"><h2 id="meaning-title">Vad betyder det?</h2><ul class="meaning-list">{meaning_items}</ul></section>
 
-    <section class="section"><h2>Creative Diagnosis</h2><ul class="diag-list">{diagnosis_items}</ul></section>
+    <section class="action" aria-labelledby="next-title"><h2 id="next-title">Nästa steg</h2><p>{safe(next_step)}</p></section>
 
-    <section class="section"><h2>Så läser du rapporten</h2><ul class="read-list"><li>Hög CTR betyder att hooken eller bilden får uppmärksamhet.</li><li>Klick men inga köp kan betyda att produktsida, erbjudande, pris, förtroende eller checkout behöver kontrolleras.</li><li>Inga klick betyder ofta att creative eller hook är svag.</li><li>Köp är den starkaste signalen.</li><li>Skala inte utan köp.</li></ul></section>
-
-    <section class="section action"><h2>Nästa steg</h2><div class="recommendation">Recommendation: {safe(data['recommendation'])}</div><p><strong>Meaning:</strong><br>{safe(data['recommendation_sv'])}</p></section>
-
-    <p class="footer">Generated for Lajo · The Clarity Shop · <a href="archive/{safe(data['date'])}.html">Open archived report</a></p>
+    <p class="footer">Annonsnivå: campaign, ad set och ad hämtas från Meta. · <a href="archive/{safe(data['date'])}.html">Öppna arkiv</a></p>
   </main>
 </body>
 </html>
 '''
-
 
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
