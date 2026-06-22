@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f1e6" />
+  <title>The Clarity Shop Control Room</title>
+  <style>
+    :root {
+      --cream:#f7f1e6;
+      --panel:#fffaf1;
+      --beige:#eadcc8;
+      --gold:#b9965b;
+      --sage:#6f8468;
+      --sage-dark:#43563f;
+      --peach:#e9b59e;
+      --pink:#d6a3a5;
+      --ink:#27231d;
+      --muted:#776d60;
+      --line:rgba(154,121,72,.25);
+      --soft-line:rgba(154,121,72,.15);
+      --shadow:0 18px 50px rgba(67,49,24,.10);
+      --radius:22px;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      color:var(--ink);
+      background:
+        linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),
+        linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),
+        var(--cream);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height:1.45;
+    }
+
+    .wrap {
+      width:min(1180px, 100%);
+      margin:0 auto;
+      padding:22px 16px 48px;
+    }
+
+    .hero,
+    .card,
+    .section,
+    .action-card {
+      background:rgba(255,250,241,.92);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+
+    .hero {
+      display:grid;
+      grid-template-columns:1.25fr .75fr;
+      gap:22px;
+      align-items:end;
+      border-radius:30px;
+      padding:28px;
+    }
+
+    .eyebrow,
+    .label,
+    .tiny-label {
+      margin:0;
+      color:var(--gold);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-family:Georgia, "Times New Roman", serif;
+      font-weight:700;
+      letter-spacing:0;
+    }
+
+    h1 {
+      margin:8px 0 12px;
+      font-size:clamp(42px, 7vw, 78px);
+      line-height:.95;
+    }
+
+    h2 {
+      margin:0;
+      font-size:clamp(26px, 4vw, 38px);
+      line-height:1.05;
+    }
+
+    h3 {
+      margin:0;
+      font-size:22px;
+      line-height:1.15;
+    }
+
+    p { margin:0; }
+
+    .sub {
+      max-width:720px;
+      color:var(--muted);
+      font-size:18px;
+    }
+
+    .hero-note {
+      border:1px solid var(--soft-line);
+      border-radius:20px;
+      padding:16px;
+      background:#fffdf8;
+    }
+
+    .hero-note strong {
+      display:block;
+      margin-top:4px;
+      font-size:24px;
+    }
+
+    .source-row {
+      display:flex;
+      flex-wrap:wrap;
+      gap:9px;
+      margin-top:20px;
+    }
+
+    .pill,
+    .badge {
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      max-width:100%;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fffdf8;
+      color:var(--muted);
+      font-size:13px;
+      font-weight:850;
+      padding:8px 11px;
+      white-space:normal;
+    }
+
+    .badge.keep { color:var(--sage-dark); background:rgba(111,132,104,.14); border-color:rgba(111,132,104,.28); }
+    .badge.check { color:#8b6225; background:rgba(185,150,91,.16); border-color:rgba(185,150,91,.30); }
+    .badge.warn { color:#8a4d35; background:rgba(233,181,158,.20); border-color:rgba(233,181,158,.34); }
+    .badge.muted { color:var(--muted); background:rgba(119,109,96,.10); border-color:rgba(119,109,96,.20); }
+
+    .section {
+      margin-top:18px;
+      border-radius:26px;
+      padding:22px;
+    }
+
+    .section-head {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    .hint {
+      max-width:470px;
+      color:var(--muted);
+      font-size:15px;
+    }
+
+    .snapshot-grid,
+    .signal-grid,
+    .product-grid {
+      display:grid;
+      gap:13px;
+    }
+
+    .snapshot-grid { grid-template-columns:repeat(6, 1fr); }
+    .signal-grid { grid-template-columns:repeat(4, 1fr); }
+    .product-grid { grid-template-columns:repeat(5, 1fr); }
+
+    .card {
+      min-width:0;
+      border-radius:var(--radius);
+      padding:16px;
+    }
+
+    .value {
+      margin-top:8px;
+      font-size:30px;
+      font-weight:950;
+      line-height:1;
+    }
+
+    .value.small { font-size:22px; line-height:1.12; }
+
+    .note {
+      margin-top:8px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .focus-card {
+      grid-column:span 2;
+      background:linear-gradient(135deg, #fffaf1, rgba(111,132,104,.13));
+    }
+
+    .ad-hero {
+      display:grid;
+      grid-template-columns:repeat(2, 1fr);
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .ad-name {
+      margin-top:9px;
+      font-size:20px;
+      font-weight:900;
+    }
+
+    .diagnosis {
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:13px;
+      margin-top:14px;
+    }
+
+    .diagnosis .card {
+      border-color:rgba(111,132,104,.28);
+      background:rgba(255,253,248,.84);
+    }
+
+    .diagnosis strong {
+      display:block;
+      margin:7px 0 4px;
+      font-size:20px;
+    }
+
+    .schedule-list {
+      display:grid;
+      gap:10px;
+    }
+
+    .schedule-item {
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr 1fr auto;
+      gap:10px;
+      align-items:center;
+      border:1px solid var(--soft-line);
+      border-radius:18px;
+      background:#fffdf8;
+      padding:12px;
+    }
+
+    .schedule-item div {
+      min-width:0;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .schedule-item b {
+      display:block;
+      color:var(--ink);
+      font-size:15px;
+    }
+
+    .empty-state {
+      border:1px dashed rgba(154,121,72,.38);
+      border-radius:18px;
+      padding:18px;
+      background:rgba(255,253,248,.70);
+      color:var(--muted);
+    }
+
+    .product-card {
+      position:relative;
+      overflow:hidden;
+      min-height:156px;
+    }
+
+    .bar {
+      width:100%;
+      height:12px;
+      margin-top:18px;
+      border-radius:999px;
+      overflow:hidden;
+      border:1px solid var(--soft-line);
+      background:var(--beige);
+    }
+
+    .bar span {
+      display:block;
+      height:100%;
+      min-width:6px;
+      border-radius:999px;
+      background:linear-gradient(90deg, var(--sage), var(--gold));
+    }
+
+    .push-level {
+      margin-top:11px;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .action-card {
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:18px;
+      align-items:center;
+      border-radius:28px;
+      padding:24px;
+      background:linear-gradient(135deg, var(--sage-dark), #2d3429);
+      color:#fffaf1;
+    }
+
+    .action-card h2,
+    .action-card p,
+    .action-card .eyebrow {
+      color:#fffaf1;
+    }
+
+    .action-card p {
+      margin-top:8px;
+      max-width:760px;
+      font-size:20px;
+      font-weight:800;
+    }
+
+    .action-badge {
+      border:1px solid rgba(255,250,241,.34);
+      border-radius:999px;
+      padding:14px 18px;
+      font-weight:950;
+      white-space:nowrap;
+      background:rgba(255,250,241,.12);
+    }
+
+    .footer {
+      padding:22px 0 0;
+      color:var(--muted);
+      text-align:center;
+      font-size:13px;
+    }
+
+    a { color:inherit; text-underline-offset:4px; }
+
+    @media (max-width:980px) {
+      .hero,
+      .action-card,
+      .ad-hero { grid-template-columns:1fr; }
+      .snapshot-grid,
+      .signal-grid,
+      .product-grid { grid-template-columns:repeat(2, 1fr); }
+      .focus-card { grid-column:span 1; }
+      .diagnosis { grid-template-columns:1fr; }
+      .schedule-item { grid-template-columns:1fr 1fr; }
+      .action-badge { width:max-content; white-space:normal; }
+    }
+
+    @media (max-width:620px) {
+      .wrap { padding:14px 12px 36px; }
+      .hero,
+      .section,
+      .action-card { border-radius:22px; padding:18px; }
+      .snapshot-grid,
+      .signal-grid,
+      .product-grid,
+      .schedule-item { grid-template-columns:1fr; }
+      .section-head { display:grid; }
+      .value { font-size:28px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">The Clarity Shop</p>
+        <h1>Control Room</h1>
+        <p class="sub">En enkel daglig vy för beslut: vad händer i annonserna, vad saknas från organiskt schema, och vad är nästa trygga steg.</p>
+        <div class="source-row" aria-label="Datakällor">
+          <span class="pill">Datum: 2026-06-22</span>
+          <span class="pill">Meta Ads: från reports/meta-ads/today.html</span>
+          <span class="pill">Blotato: live data saknas</span>
+          <span class="pill">Shopify: inte ändrat</span>
+        </div>
+      </div>
+      <aside class="hero-note" aria-label="Dagens enkla slutsats">
+        <p class="tiny-label">Dagens enkla slutsats</p>
+        <strong>Folk klickar, men köper inte ännu.</strong>
+        <p class="note">Bra klicksignal finns. Skala inte annonserna innan checkout och produktflöde är kontrollerat.</p>
+      </aside>
+    </header>
+
+    <section class="section" aria-labelledby="snapshot-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">1. Today Snapshot</p>
+          <h2 id="snapshot-title">Idag i korthet</h2>
+        </div>
+        <p class="hint">Den här raden ska svara på: “Behöver jag göra något idag?”</p>
+      </div>
+      <div class="snapshot-grid">
+        <article class="card"><p class="label">Ad spend today</p><div class="value">28,29 kr</div><p class="note">Meta Ads idag.</p></article>
+        <article class="card"><p class="label">Link clicks today</p><div class="value">2</div><p class="note">Klick till sidan.</p></article>
+        <article class="card"><p class="label">Purchases today</p><div class="value">0</div><p class="note">Inga köp registrerade.</p></article>
+        <article class="card"><p class="label">Scheduled posts today</p><div class="value small">Live data saknas</div><p class="note">Blotato schema behövs.</p></article>
+        <article class="card"><p class="label">Next post time</p><div class="value small">Ej anslutet</div><p class="note">Väntar på Blotato.</p></article>
+        <article class="card focus-card"><p class="label">Main product focus</p><div class="value small">Clarity Starter Bundle</div><p class="note">Syns i Meta-kampanjnamnet.</p></article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="ads-signal-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">2. Ads Signal</p>
+          <h2 id="ads-signal-title">Annonsläget just nu</h2>
+        </div>
+        <p class="hint">Kort version: annonsen får uppmärksamhet, men köpsteget behöver kontrolleras innan budget höjs.</p>
+      </div>
+      <div class="ad-hero">
+        <article class="card">
+          <span class="badge keep">Best ad right now</span>
+          <p class="ad-name">Hook 3v2 — Kontrasten (Transformation)</p>
+          <p class="note">2 klick, 7,14% CTR, 8,18 kr CPC.</p>
+        </article>
+        <article class="card">
+          <span class="badge warn">Weakest ad right now</span>
+          <p class="ad-name">Hook 3v4 — Känslan av lättnad (Transformation)</p>
+          <p class="note">11,58 kr spend, 1 visning, 0 klick. För lite data, men svagast spend-signal idag.</p>
+        </article>
+      </div>
+      <div class="signal-grid">
+        <article class="card"><p class="label">CTR</p><div class="value">6,45%</div><p class="note">Klicksignal finns.</p></article>
+        <article class="card"><p class="label">CPC</p><div class="value">14,15 kr</div><p class="note">Kostnad per klick.</p></article>
+        <article class="card"><p class="label">Landing page views</p><div class="value small">Saknas</div><p class="note">Inte i dagens HTML-rapport.</p></article>
+        <article class="card"><p class="label">Add to cart</p><div class="value">0</div><p class="note">Ingen ATC-signal hittad.</p></article>
+        <article class="card"><p class="label">Purchases</p><div class="value">0</div><p class="note">Köp saknas.</p></article>
+        <article class="card"><p class="label">Spend</p><div class="value">28,29 kr</div><p class="note">Dagens annonskostnad.</p></article>
+        <article class="card"><p class="label">Impressions</p><div class="value">31</div><p class="note">Folk ser annonserna.</p></article>
+        <article class="card"><p class="label">Reach</p><div class="value">28</div><p class="note">Unika personer.</p></article>
+      </div>
+      <div class="diagnosis" aria-label="Enkel diagnos">
+        <article class="card"><p class="label">People are seeing</p><strong>Ja</strong><p class="note">31 visningar betyder att Meta levererar.</p></article>
+        <article class="card"><p class="label">People are clicking</p><strong>Ja</strong><p class="note">2 klick och 6,45% CTR är en tidig positiv signal.</p></article>
+        <article class="card"><p class="label">People are buying / not buying</p><strong>Inte ännu</strong><p class="note">0 köp. Kontrollera checkout/testköp innan skalning.</p></article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="organic-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">3. Organic Schedule</p>
+          <h2 id="organic-title">Organiskt schema</h2>
+        </div>
+        <p class="hint">Dashboarden visar platsen där Blotato-schema ska ligga. Ingen postning eller schemaläggning har gjorts.</p>
+      </div>
+      <div class="schedule-list">
+        <div class="schedule-item">
+          <div><b>Platform</b>Blotato live data saknas</div>
+          <div><b>Time</b>Ej anslutet</div>
+          <div><b>Product focus</b>Okänt</div>
+          <div><b>Media type</b>unknown</div>
+          <span class="badge check">Check media</span>
+        </div>
+      </div>
+      <p class="empty-state" style="margin-top:12px;">När Blotato-data finns ska varje schemalagd post visas här med plattform, tid, produktfokus, mediatyp och risklabel: Keep, Check media, Too crowded, Needs video eller Missing YouTube.</p>
+    </section>
+
+    <section class="section" aria-labelledby="product-map-title">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">4. Product Focus Map</p>
+          <h2 id="product-map-title">Vad pushas mest?</h2>
+        </div>
+        <p class="hint">Baserat på tillgänglig rapportdata. Organiska poster behöver Blotato-data för att bli komplett.</p>
+      </div>
+      <div class="product-grid">
+        <article class="card product-card">
+          <p class="label">Situationship Exit Strategy</p>
+          <div class="bar"><span style="width:6%"></span></div>
+          <p class="push-level">Ingen push hittad idag.</p>
+        </article>
+        <article class="card product-card">
+          <p class="label">Self-Worth Reset</p>
+          <div class="bar"><span style="width:6%"></span></div>
+          <p class="push-level">Ingen push hittad idag.</p>
+        </article>
+        <article class="card product-card">
+          <p class="label">Clarity Starter Bundle</p>
+          <div class="bar"><span style="width:100%"></span></div>
+          <p class="push-level">Huvudfokus i Meta Ads.</p>
+        </article>
+        <article class="card product-card">
+          <p class="label">Full Clarity Library</p>
+          <div class="bar"><span style="width:6%"></span></div>
+          <p class="push-level">Ingen push hittad idag.</p>
+        </article>
+        <article class="card product-card">
+          <p class="label">Money Clarity Reset</p>
+          <div class="bar"><span style="width:6%"></span></div>
+          <p class="push-level">Ingen push hittad idag.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="action-card" aria-labelledby="next-action-title">
+      <div>
+        <p class="eyebrow">5. Next Best Action</p>
+        <h2 id="next-action-title">Check checkout/test purchase before scaling.</h2>
+        <p>Skala inte ads ännu. Klicksignalen är lovande, men köp saknas. Nästa trygga steg är att kontrollera produktsida, förtroende, pris och checkout utan att ändra Meta Ads.</p>
+      </div>
+      <div class="action-badge">Do not scale ads yet</div>
+    </section>
+
+    <p class="footer">Control Room skapad för The Clarity Shop. Arkiv: <a href="archive/2026-06-22.html">2026-06-22</a>. Inga Meta Ads, Shopify-inställningar eller Blotato-poster ändrades.</p>
+  </main>
+</body>
+</html>
