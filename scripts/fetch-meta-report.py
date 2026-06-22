@@ -71,6 +71,27 @@ def to_float(value: Any) -> float:
         return 0.0
 
 
+def metric_number(value: Any) -> float:
+    if isinstance(value, str):
+        cleaned = (
+            value.replace("kr", "")
+            .replace("%", "")
+            .replace(" ", "")
+            .replace(",", ".")
+            .strip()
+        )
+        return to_float(cleaned)
+    return to_float(value)
+
+
+def metric_raw(data: dict[str, Any], raw_key: str, display_key: str, default: Any = 0) -> float:
+    return metric_number(data.get(raw_key, data.get(display_key, default)))
+
+
+def metric_display(data: dict[str, Any], key: str, default: Any = "0") -> str:
+    return str(data.get(key, default))
+
+
 def money(value: Any, suffix: str = " kr") -> str:
     amount = to_float(value)
     return f"{amount:,.2f}".replace(",", " ").replace(".", ",") + suffix
@@ -200,14 +221,14 @@ def base_data(brand: str, campaign: str, diagnosis: str, mode: str) -> dict[str,
 
 
 def summarize_ads(ads: list[dict[str, Any]]) -> dict[str, Any]:
-    spend = sum(ad["spend_raw"] for ad in ads)
-    impressions = sum(ad["impressions_raw"] for ad in ads)
-    reach = sum(ad["reach_raw"] for ad in ads)
-    clicks = sum(ad["link_clicks_raw"] for ad in ads)
-    purchases = sum(ad["purchases_raw"] for ad in ads)
+    spend = sum(metric_raw(ad, "spend_raw", "spend") for ad in ads)
+    impressions = sum(metric_raw(ad, "impressions_raw", "impressions") for ad in ads)
+    reach = sum(metric_raw(ad, "reach_raw", "reach") for ad in ads)
+    clicks = sum(metric_raw(ad, "link_clicks_raw", "link_clicks") for ad in ads)
+    purchases = sum(metric_raw(ad, "purchases_raw", "purchases") for ad in ads)
     ctr = (clicks / impressions * 100) if impressions else 0
     cpc = spend / clicks if clicks else 0
-    cpp_values = [ad["cost_per_purchase_raw"] for ad in ads if ad["cost_per_purchase_raw"]]
+    cpp_values = [metric_raw(ad, "cost_per_purchase_raw", "cost_per_purchase") for ad in ads if metric_raw(ad, "cost_per_purchase_raw", "cost_per_purchase")]
     cost_per_purchase = min(cpp_values) if cpp_values else (spend / purchases if purchases else 0)
     return {
         "spend": money(spend), "impressions": number(impressions), "reach": number(reach),
@@ -219,14 +240,21 @@ def summarize_ads(ads: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def top_ad(ads: list[dict[str, Any]]) -> dict[str, Any] | None:
-    clicked = [ad for ad in ads if ad["link_clicks_raw"] >= 1]
-    return max(clicked, key=lambda ad: (ad["ctr_raw"], ad["link_clicks_raw"], -ad["spend_raw"])) if clicked else None
+    clicked = [ad for ad in ads if metric_raw(ad, "link_clicks_raw", "link_clicks") >= 1]
+    return max(
+        clicked,
+        key=lambda ad: (
+            metric_raw(ad, "ctr_raw", "ctr"),
+            metric_raw(ad, "link_clicks_raw", "link_clicks"),
+            -metric_raw(ad, "spend_raw", "spend"),
+        ),
+    ) if clicked else None
 
 
 def build_narrative(ads: list[dict[str, Any]], totals: dict[str, Any], top: dict[str, Any] | None) -> tuple[str, list[str], str, str]:
-    purchases = totals["purchases_raw"]
-    clicks = totals["clicks_raw"]
-    ctr = totals["ctr_raw"]
+    purchases = metric_raw(totals, "purchases_raw", "purchases")
+    clicks = metric_raw(totals, "clicks_raw", "link_clicks")
+    ctr = metric_raw(totals, "ctr_raw", "ctr")
     if purchases > 0:
         summary = "Vi har köpsignal. Nu ska vi jämföra kostnad per köp innan något skalas."
     elif clicks > 0:
@@ -235,7 +263,14 @@ def build_narrative(ads: list[dict[str, Any]], totals: dict[str, Any], top: dict
         summary = "Vi har ännu ingen tydlig klick- eller köpsignal."
 
     strongest = top["ad_name"] if top else "ingen annons ännu"
-    weakest = min(ads, key=lambda ad: (ad["purchases_raw"], ad["link_clicks_raw"], ad["ctr_raw"])) if ads else None
+    weakest = min(
+        ads,
+        key=lambda ad: (
+            metric_raw(ad, "purchases_raw", "purchases"),
+            metric_raw(ad, "link_clicks_raw", "link_clicks"),
+            metric_raw(ad, "ctr_raw", "ctr"),
+        ),
+    ) if ads else None
     weak_name = weakest["ad_name"] if weakest else "ingen annons ännu"
     diagnosis = [
         f"Starkast signal just nu: {strongest}.",
@@ -248,7 +283,7 @@ def build_narrative(ads: list[dict[str, Any]], totals: dict[str, Any], top: dict
         rec, rec_sv = "KEEP RUNNING", "Fortsätt köra och bedöm om köpen håller stabil kostnad."
     elif clicks >= 1 and ctr >= 2:
         rec, rec_sv = "PREPARE NEW PAUSED CREATIVES", "Förbered nya annonser, men aktivera dem inte ännu."
-    elif totals["impressions_raw"] >= LOW_IMPRESSIONS and clicks == 0:
+    elif metric_raw(totals, "impressions_raw", "impressions") >= LOW_IMPRESSIONS and clicks == 0:
         rec, rec_sv = "CREATE NEW PAUSED CREATIVES", "Skapa nya annonser i pausat läge eftersom nuvarande hook inte får klick."
     else:
         rec, rec_sv = "KEEP RUNNING", "Fortsätt köra lite till eftersom datan fortfarande är för liten."
@@ -308,13 +343,16 @@ def fetch_meta_data() -> dict[str, Any]:
 
 
 def swedish_ad_status(ad: dict[str, Any]) -> tuple[str, str]:
-    if ad["purchases_raw"] > 0:
+    purchases = metric_raw(ad, "purchases_raw", "purchases")
+    impressions = metric_raw(ad, "impressions_raw", "impressions")
+    clicks = metric_raw(ad, "link_clicks_raw", "link_clicks")
+    if purchases > 0:
         return "Vinnare", "positive"
-    if ad["impressions_raw"] < 20:
+    if impressions < 20:
         return "För lite data", "muted"
-    if ad["link_clicks_raw"] > 0:
+    if clicks > 0:
         return "Får klick", "warning"
-    if ad["impressions_raw"] > 0:
+    if impressions > 0:
         return "Svag signal", "danger"
     return "För lite data", "muted"
 
@@ -344,9 +382,9 @@ def bar_width(value: float, max_value: float) -> int:
 
 
 def simple_meaning(totals: dict[str, Any]) -> list[str]:
-    impressions = totals.get("impressions_raw", 0)
-    clicks = totals.get("clicks_raw", 0)
-    purchases = totals.get("purchases_raw", 0)
+    impressions = metric_raw(totals, "impressions_raw", "impressions")
+    clicks = metric_raw(totals, "clicks_raw", "link_clicks")
+    purchases = metric_raw(totals, "purchases_raw", "purchases")
     return [
         "Folk ser annonserna." if impressions > 0 else "Nästan ingen ser annonserna ännu.",
         "Några klickar." if clicks > 0 else "Ingen klickar ännu.",
@@ -355,8 +393,8 @@ def simple_meaning(totals: dict[str, Any]) -> list[str]:
 
 
 def next_step_text(totals: dict[str, Any]) -> str:
-    purchases = totals.get("purchases_raw", 0)
-    clicks = totals.get("clicks_raw", 0)
+    purchases = metric_raw(totals, "purchases_raw", "purchases")
+    clicks = metric_raw(totals, "clicks_raw", "link_clicks")
     if purchases == 0 and clicks > 0:
         return "Fortsätt samla data. Förbered nya annonser, men aktivera dem inte ännu."
     if purchases > 0:
@@ -365,10 +403,11 @@ def next_step_text(totals: dict[str, Any]) -> str:
 
 
 def render_status_cards(data: dict[str, Any]) -> str:
+    purchases_raw = metric_raw(data, "purchases_raw", "purchases")
     cards = [
-        ("Ser folk annonsen?", "Visningar", data["impressions"], data["impressions_raw"], "Folk ser annonserna", "impressions"),
-        ("Klickar folk?", "Klick", data["link_clicks"], data["clicks_raw"], "Folk klickar", "clicks"),
-        ("Köper folk?", "Köp", data["purchases"], data["purchases_raw"], "Köp har kommit in" if data["purchases_raw"] > 0 else "Inga köp ännu", "purchases"),
+        ("Ser folk annonsen?", "Visningar", metric_display(data, "impressions"), metric_raw(data, "impressions_raw", "impressions"), "Folk ser annonserna", "impressions"),
+        ("Klickar folk?", "Klick", metric_display(data, "link_clicks"), metric_raw(data, "clicks_raw", "link_clicks"), "Folk klickar", "clicks"),
+        ("Köper folk?", "Köp", metric_display(data, "purchases"), purchases_raw, "Köp har kommit in" if purchases_raw > 0 else "Inga köp ännu", "purchases"),
     ]
     html_cards = []
     for question, label, value, raw, meaning, kind in cards:
@@ -384,7 +423,11 @@ def render_status_cards(data: dict[str, Any]) -> str:
 
 
 def render_funnel(data: dict[str, Any]) -> str:
-    items = [("Visningar", data["impressions"], data["impressions_raw"]), ("Klick", data["link_clicks"], data["clicks_raw"]), ("Köp", data["purchases"], data["purchases_raw"])]
+    items = [
+        ("Visningar", metric_display(data, "impressions"), metric_raw(data, "impressions_raw", "impressions")),
+        ("Klick", metric_display(data, "link_clicks"), metric_raw(data, "clicks_raw", "link_clicks")),
+        ("Köp", metric_display(data, "purchases"), metric_raw(data, "purchases_raw", "purchases")),
+    ]
     max_value = max([raw for _, _, raw in items] + [1])
     rows = []
     for label, display, raw in items:
@@ -401,14 +444,14 @@ def render_funnel(data: dict[str, Any]) -> str:
 def render_top_ad(ad: dict[str, Any] | None) -> str:
     if not ad:
         return '<div class="empty-card">Ingen tydlig vinnare ännu.</div>'
-    if ad["purchases_raw"] > 0:
+    if metric_raw(ad, "purchases_raw", "purchases") > 0:
         meaning = "Den här annonsen får bäst reaktion just nu och har köp."
     else:
         meaning = "Den här annonsen får bäst reaktion just nu, men den har fortfarande inga köp."
     return f'''
-      <article class="best-card" aria-label="Bäst just nu: {safe(ad['ad_name'])}">
-        <h3>{safe(ad['ad_name'])}</h3>
-        <div class="mini-metrics"><span>Klick <b>{safe(ad['link_clicks'])}</b></span><span>CTR <b>{safe(ad['ctr'])}</b></span><span>Spend <b>{safe(ad['spend'])}</b></span></div>
+      <article class="best-card" aria-label="Bäst just nu: {safe(ad.get('ad_name', 'Unnamed ad'))}">
+        <h3>{safe(ad.get('ad_name', 'Unnamed ad'))}</h3>
+        <div class="mini-metrics"><span>Klick <b>{safe(ad.get('link_clicks', '0'))}</b></span><span>CTR <b>{safe(ad.get('ctr', '0,00%'))}</b></span><span>Spend <b>{safe(ad.get('spend', '0,00 kr'))}</b></span></div>
         <p>{safe(meaning)}</p>
       </article>'''
 
@@ -416,17 +459,20 @@ def render_top_ad(ad: dict[str, Any] | None) -> str:
 def render_ad_cards(ads: list[dict[str, Any]]) -> str:
     if not ads:
         return '<div class="empty-card">Ingen annonsdata på annonsnivå ännu.</div>'
-    max_clicks = max([ad["link_clicks_raw"] for ad in ads] + [1])
+    max_clicks = max([metric_raw(ad, "link_clicks_raw", "link_clicks") for ad in ads] + [1])
     cards = []
     for ad in ads:
         status, cls = swedish_ad_status(ad)
-        width = bar_width(ad["link_clicks_raw"], max_clicks)
+        width = bar_width(metric_raw(ad, "link_clicks_raw", "link_clicks"), max_clicks)
+        ad_name = ad.get("ad_name", "Unnamed ad")
+        link_clicks = ad.get("link_clicks", "0")
+        purchases = ad.get("purchases", "0")
         cards.append(f'''
-      <article class="ad-card" aria-label="Annons {safe(ad['ad_name'])}. Klick {safe(ad['link_clicks'])}. Köp {safe(ad['purchases'])}. Status {safe(status)}.">
-        <div class="ad-head"><h3>{safe(ad['ad_name'])}</h3><span class="badge {cls}">{safe(status)}</span></div>
-        <div class="ad-numbers"><span>Spend <b>{safe(ad['spend'])}</b></span><span>Klick <b>{safe(ad['link_clicks'])}</b></span><span>CTR <b>{safe(ad['ctr'])}</b></span><span>Köp <b>{safe(ad['purchases'])}</b></span></div>
-        <div class="tiny-bar" role="img" aria-label="Klickbar för {safe(ad['ad_name'])}: {safe(ad['link_clicks'])} klick"><span style="width:{width}%"></span></div>
-        <p class="sr-summary">Den här annonsen har {safe(ad['link_clicks'])} klick och status {safe(status)}.</p>
+      <article class="ad-card" aria-label="Annons {safe(ad_name)}. Klick {safe(link_clicks)}. Köp {safe(purchases)}. Status {safe(status)}.">
+        <div class="ad-head"><h3>{safe(ad_name)}</h3><span class="badge {cls}">{safe(status)}</span></div>
+        <div class="ad-numbers"><span>Spend <b>{safe(ad.get('spend', '0,00 kr'))}</b></span><span>Klick <b>{safe(link_clicks)}</b></span><span>CTR <b>{safe(ad.get('ctr', '0,00%'))}</b></span><span>Köp <b>{safe(purchases)}</b></span></div>
+        <div class="tiny-bar" role="img" aria-label="Klickbar för {safe(ad_name)}: {safe(link_clicks)} klick"><span style="width:{width}%"></span></div>
+        <p class="sr-summary">Den här annonsen har {safe(link_clicks)} klick och status {safe(status)}.</p>
       </article>''')
     return "".join(cards)
 
@@ -444,7 +490,7 @@ def render_html(data: dict[str, Any]) -> str:
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#f6f1e8" />
-  <title>Meta Ads Kontroll - {safe(data['brand'])}</title>
+  <title>Meta Ads Kontroll - {safe(data.get('brand', 'The Clarity Shop'))}</title>
   <style>
     :root {{ --bg:#f6f1e8; --panel:#fffaf2; --ink:#17202a; --muted:#52606d; --line:#d8c6aa; --green:#1f7a4d; --orange:#a85f16; --red:#a43131; --grey:#64748b; --shadow:0 16px 42px rgba(42,31,18,.10); --radius:26px; }}
     * {{ box-sizing:border-box; }} body {{ margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); line-height:1.45; }}
@@ -468,7 +514,7 @@ def render_html(data: dict[str, Any]) -> str:
     <header class="hero">
       <h1>Meta Ads Kontroll</h1>
       <p class="sub">En enkel översikt över vad som händer med annonserna just nu.</p>
-      <div class="pills" aria-label="Rapportinfo"><span class="pill">Period: {safe(data['period'])}</span><span class="pill">Campaign: {safe(data['campaign'])}</span><span class="pill">Uppdaterad: {safe(data['updated_at'])}</span></div>
+      <div class="pills" aria-label="Rapportinfo"><span class="pill">Period: {safe(data.get('period', '-'))}</span><span class="pill">Campaign: {safe(data.get('campaign', '-'))}</span><span class="pill">Uppdaterad: {safe(data.get('updated_at', '-'))}</span></div>
     </header>
 
     <section class="cards" aria-label="Tre enkla frågor om annonserna">{status_cards}
@@ -484,7 +530,7 @@ def render_html(data: dict[str, Any]) -> str:
 
     <section class="action" aria-labelledby="next-title"><h2 id="next-title">Nästa steg</h2><p>{safe(next_step)}</p></section>
 
-    <p class="footer">Annonsnivå: campaign, ad set och ad hämtas från Meta. · <a href="archive/{safe(data['date'])}.html">Öppna arkiv</a></p>
+    <p class="footer">Annonsnivå: campaign, ad set och ad hämtas från Meta. · <a href="archive/{safe(data.get('date', now_date()))}.html">Öppna arkiv</a></p>
   </main>
 </body>
 </html>
@@ -498,12 +544,13 @@ def main() -> None:
 
     data = fetch_meta_data()
     html_output = render_html(data)
+    report_date = data.get("date", now_date())
     (report_dir / "latest.html").write_text(html_output, encoding="utf-8")
-    (archive_dir / f"{data['date']}.html").write_text(html_output, encoding="utf-8")
+    (archive_dir / f"{report_date}.html").write_text(html_output, encoding="utf-8")
 
     print("Report generated:")
     print(report_dir / "latest.html")
-    print(archive_dir / f"{data['date']}.html")
+    print(archive_dir / f"{report_date}.html")
 
 
 if __name__ == "__main__":
