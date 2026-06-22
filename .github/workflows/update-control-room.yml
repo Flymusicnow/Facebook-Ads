@@ -1,0 +1,43 @@
+name: Update Control Room Dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-control-room:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Regenerate Control Room dashboard
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_AD_ACCOUNT_ID: ${{ secrets.META_AD_ACCOUNT_ID }}
+          META_API_VERSION: v25.0
+          BLOTATO_TOKEN: ${{ secrets.BLOTATO_TOKEN }}
+          BLOTATO_SCHEDULE_URL: ${{ secrets.BLOTATO_SCHEDULE_URL }}
+        run: npm run update:control-room
+
+      - name: Commit dashboard update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/the-clarity-shop-control-room/latest.html reports/the-clarity-shop-control-room/archive/*.html
+          if git diff --cached --quiet; then
+            echo "No Control Room dashboard changes to commit."
+          else
+            git commit -m "Update Control Room dashboard"
+            git push
+          fi

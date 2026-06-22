@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "update:control-room": "node scripts/update-control-room-dashboard.js",
+    "test:control-room": "node --test scripts/update-control-room-dashboard.test.js"
+  }
+}
