@@ -72,6 +72,32 @@ const FALLBACK_META = {
   weakestAdNote: "11,58 kr spend, 1 visning, 0 klick. For lite data, men svagast spend-signal idag.",
 };
 
+const FALLBACK_SHOPIFY = {
+  mode: "fallback",
+  sessions: "Finns",
+  cartAdditions: "Finns",
+  checkoutReached: "Finns",
+  completedCheckouts: "0 verifierade",
+  conversionRate: "Saknas",
+  deviceSplit: [
+    { label: "Mobil", value: "Saknas" },
+    { label: "Desktop", value: "Saknas" },
+    { label: "Surfplatta", value: "Saknas" },
+  ],
+  socialTrafficSplit: [
+    { label: "Facebook", value: "Saknas" },
+    { label: "Instagram", value: "Saknas" },
+    { label: "TikTok", value: "Saknas" },
+  ],
+  diagnostics: {
+    traffic: "Ja, sessioner finns.",
+    cartIntent: "Ja, add to cart finns.",
+    checkoutIntent: "Ja, checkout har natts.",
+    purchases: "Testkop fungerar. Inga verifierade icke-testkop annu.",
+    warning: "Funneldata ar inte live annu. Bekrafta riktiga Shopify Analytics-tal innan skalning.",
+  },
+};
+
 function safe(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -85,7 +111,15 @@ function envValue(env, key) {
 }
 
 function todayIso(now = new Date()) {
-  return now.toISOString().slice(0, 10);
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Stockholm",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now).map((part) => [part.type, part.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
 function number(value) {
@@ -102,6 +136,18 @@ function money(value) {
 function percent(value) {
   const amount = Number(value || 0);
   return `${amount.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+}
+
+function displayMetric(value, fallback = "Saknas") {
+  if (value === undefined || value === null || String(value).trim() === "") return fallback;
+  if (typeof value === "number") return number(value);
+  return String(value);
+}
+
+function displayPercent(value, fallback = "Saknas") {
+  if (value === undefined || value === null || String(value).trim() === "") return fallback;
+  if (typeof value === "number") return percent(value);
+  return String(value);
 }
 
 function actionValue(actions, names) {
@@ -314,6 +360,78 @@ async function fetchBlotato(env, fetchImpl) {
   }
 }
 
+function normalizeSplit(value, fallback) {
+  if (Array.isArray(value)) {
+    return value.map((item) => ({
+      label: displayMetric(item.label || item.name || item.source || item.device, "Okand"),
+      value: displayMetric(item.value ?? item.sessions ?? item.count ?? item.percent ?? item.percentage),
+    }));
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).map(([label, metric]) => ({
+      label,
+      value: displayMetric(metric),
+    }));
+  }
+  return fallback;
+}
+
+function normalizeShopifyFunnel(raw = {}) {
+  const sessions = firstNonEmpty(raw.sessions, raw.visits);
+  const cartAdditions = firstNonEmpty(raw.cartAdditions, raw.sessionsWithCartAdditions, raw.addToCart, raw.add_to_cart);
+  const checkouts = firstNonEmpty(raw.checkoutReached, raw.reachedCheckout, raw.sessionsReachedCheckout, raw.checkoutsReached);
+  const completed = firstNonEmpty(raw.completedCheckouts, raw.completed_checkout, raw.purchases, raw.orders);
+  const conversion = firstNonEmpty(raw.conversionRate, raw.conversion_rate);
+  return {
+    mode: "provided",
+    sessions: displayMetric(sessions),
+    cartAdditions: displayMetric(cartAdditions),
+    checkoutReached: displayMetric(checkouts),
+    completedCheckouts: displayMetric(completed),
+    conversionRate: displayPercent(conversion),
+    deviceSplit: normalizeSplit(raw.deviceSplit || raw.device_split || raw.devices, FALLBACK_SHOPIFY.deviceSplit),
+    socialTrafficSplit: normalizeSplit(raw.socialTrafficSplit || raw.social_traffic_split || raw.socialTraffic || raw.social, FALLBACK_SHOPIFY.socialTrafficSplit),
+    diagnostics: {
+      traffic: Number(sessions || 0) > 0 ? "Ja, trafik kommer in." : "Saknas eller 0 sessioner.",
+      cartIntent: Number(cartAdditions || 0) > 0 ? "Ja, vissa lagger i varukorgen." : "Ingen tydlig cart-signal annu.",
+      checkoutIntent: Number(checkouts || 0) > 0 ? "Ja, vissa nar checkout." : "Ingen tydlig checkout-signal annu.",
+      purchases: Number(completed || 0) > 0 ? "Ja, kop finns i funneldata." : "Inga verifierade kop i funneldata.",
+      warning: raw.warning || raw.funnelWarning || "Folj var kunder tappar mellan varukorg, checkout och kop.",
+    },
+  };
+}
+
+async function fetchShopify(env) {
+  const inlineJson = envValue(env, "SHOPIFY_FUNNEL_JSON");
+  const filePath = envValue(env, "SHOPIFY_FUNNEL_DATA_FILE");
+
+  try {
+    if (inlineJson) {
+      return {
+        data: normalizeShopifyFunnel(JSON.parse(inlineJson)),
+        status: "Shopify funnel data loaded from provided JSON.",
+      };
+    }
+    if (filePath) {
+      const raw = fs.readFileSync(filePath, "utf8");
+      return {
+        data: normalizeShopifyFunnel(JSON.parse(raw)),
+        status: "Shopify funnel data loaded from local data file.",
+      };
+    }
+  } catch (error) {
+    return {
+      data: FALLBACK_SHOPIFY,
+      status: "Shopify funnel data invalid or missing. Showing known signals placeholder.",
+    };
+  }
+
+  return {
+    data: FALLBACK_SHOPIFY,
+    status: "Shopify live funnel data missing. Showing known signals placeholder.",
+  };
+}
+
 function buildOrganicSummary(schedule) {
   const todayPosts = schedule.filter((item) => item.time.startsWith("22 June 2026"));
   const nextPost = schedule[0] || null;
@@ -339,9 +457,10 @@ function buildOrganicSummary(schedule) {
 
 async function buildControlRoomData({ env = process.env, today = todayIso(), now = new Date(), fetchImpl = globalThis.fetch } = {}) {
   const effectiveFetch = fetchImpl || globalThis.fetch;
-  const [metaResult, organicResult] = await Promise.all([
+  const [metaResult, organicResult, shopifyResult] = await Promise.all([
     fetchMeta(env, effectiveFetch),
     fetchBlotato(env, effectiveFetch),
+    fetchShopify(env),
   ]);
   const organicSummary = buildOrganicSummary(organicResult.data.schedule);
   return {
@@ -349,7 +468,8 @@ async function buildControlRoomData({ env = process.env, today = todayIso(), now
     updatedAt: now.toISOString(),
     meta: metaResult.data,
     organic: { ...organicResult.data, ...organicSummary },
-    statusMessages: [metaResult.status, organicResult.status],
+    shopify: shopifyResult.data,
+    statusMessages: [metaResult.status, organicResult.status, shopifyResult.status],
   };
 }
 
@@ -388,9 +508,18 @@ function productCards(counts) {
   }).join("");
 }
 
+function splitCards(items, className) {
+  return items.map((item) => `
+          <div class="${className}">
+            <span>${safe(item.label)}</span>
+            <strong>${safe(item.value)}</strong>
+          </div>`).join("");
+}
+
 function renderDashboard(data) {
   const meta = data.meta;
   const organic = data.organic;
+  const shopify = data.shopify;
   return `<!doctype html>
 <html lang="sv">
 <head>
@@ -438,6 +567,15 @@ function renderDashboard(data) {
     .diagnosis { display:grid; grid-template-columns:repeat(3, 1fr); gap:13px; margin-top:14px; }
     .diagnosis .card { border-color:rgba(111,132,104,.28); background:rgba(255,253,248,.84); }
     .diagnosis strong { display:block; margin:7px 0 4px; font-size:20px; }
+    .funnel-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; align-items:stretch; }
+    .funnel-steps { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+    .funnel-step { min-height:150px; border-radius:20px; padding:15px; border:1px solid var(--soft-line); background:#fffdf8; }
+    .funnel-step strong { display:block; margin-top:9px; font-size:26px; line-height:1; }
+    .funnel-step .line { width:100%; height:8px; margin-top:18px; border-radius:999px; background:var(--beige); overflow:hidden; }
+    .funnel-step .line span { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--sage), var(--gold)); }
+    .split-panel { display:grid; gap:10px; }
+    .split-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:16px; padding:10px 12px; background:#fffdf8; color:var(--muted); font-size:14px; }
+    .split-row strong { color:var(--ink); font-size:15px; white-space:nowrap; }
     .schedule-list { display:grid; gap:10px; }
     .schedule-item { display:grid; grid-template-columns:1.15fr .85fr 1.35fr .85fr .85fr auto; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:18px; background:#fffdf8; padding:12px; }
     .schedule-item div { min-width:0; color:var(--muted); font-size:14px; }
@@ -452,8 +590,8 @@ function renderDashboard(data) {
     .action-badge { border:1px solid rgba(255,250,241,.34); border-radius:999px; padding:14px 18px; font-weight:950; white-space:nowrap; background:rgba(255,250,241,.12); }
     .footer { padding:22px 0 0; color:var(--muted); text-align:center; font-size:13px; }
     a { color:inherit; text-underline-offset:4px; }
-    @media (max-width:980px) { .hero,.action-card,.ad-hero { grid-template-columns:1fr; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid { grid-template-columns:repeat(2, 1fr); } .focus-card { grid-column:span 1; } .diagnosis { grid-template-columns:1fr; } .schedule-item { grid-template-columns:1fr 1fr; } .action-badge { width:max-content; white-space:normal; } }
-    @media (max-width:620px) { .wrap { padding:14px 12px 36px; } .hero,.section,.action-card { border-radius:22px; padding:18px; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid,.schedule-item { grid-template-columns:1fr; } .section-head { display:grid; } .value { font-size:28px; } }
+    @media (max-width:980px) { .hero,.action-card,.ad-hero,.funnel-grid { grid-template-columns:1fr; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid,.funnel-steps { grid-template-columns:repeat(2, 1fr); } .focus-card { grid-column:span 1; } .diagnosis { grid-template-columns:1fr; } .schedule-item { grid-template-columns:1fr 1fr; } .action-badge { width:max-content; white-space:normal; } }
+    @media (max-width:620px) { .wrap { padding:14px 12px 36px; } .hero,.section,.action-card { border-radius:22px; padding:18px; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid,.schedule-item,.funnel-steps { grid-template-columns:1fr; } .section-head { display:grid; } .value { font-size:28px; } }
   </style>
 </head>
 <body>
@@ -467,7 +605,7 @@ function renderDashboard(data) {
           <span class="pill">Datum: ${safe(data.today)}</span>
           <span class="pill">Meta Ads: ${meta.mode === "live" ? "live data" : "fallback"}</span>
           <span class="pill">Blotato: ${organic.mode === "live" ? "live data" : "last known schedule"}</span>
-          <span class="pill">Shopify: inte andrat</span>
+          <span class="pill">Shopify: ${shopify.mode === "fallback" ? "placeholder" : "provided funnel data"}</span>
         </div>
         <div class="status-row">${data.statusMessages.map((message) => `<span class="pill">${safe(message)}</span>`).join("")}</div>
       </div>
@@ -513,8 +651,35 @@ function renderDashboard(data) {
       </div>
     </section>
 
+    <section class="section" aria-labelledby="shopify-funnel-title">
+      <div class="section-head"><div><p class="eyebrow">3. Shopify Funnel</p><h2 id="shopify-funnel-title">Var tappar kunderna?</h2></div><p class="hint">Rapportvy endast. Inga Shopify-produkter, priser eller checkout-installningar andras.</p></div>
+      <div class="funnel-grid">
+        <div class="funnel-steps">
+          <article class="funnel-step"><p class="label">Traffic arriving</p><strong>${safe(shopify.sessions)}</strong><p class="note">Sessions</p><div class="line"><span style="width:100%"></span></div></article>
+          <article class="funnel-step"><p class="label">Cart intent</p><strong>${safe(shopify.cartAdditions)}</strong><p class="note">Sessions with cart additions</p><div class="line"><span style="width:72%"></span></div></article>
+          <article class="funnel-step"><p class="label">Checkout intent</p><strong>${safe(shopify.checkoutReached)}</strong><p class="note">Reached checkout</p><div class="line"><span style="width:48%"></span></div></article>
+          <article class="funnel-step"><p class="label">Purchases</p><strong>${safe(shopify.completedCheckouts)}</strong><p class="note">Completed checkout</p><div class="line"><span style="width:18%"></span></div></article>
+        </div>
+        <article class="card">
+          <span class="badge ${shopify.mode === "fallback" ? "check" : "keep"}">Funnel warning</span>
+          <p class="value small">${safe(shopify.conversionRate)}</p>
+          <p class="note">Conversion rate</p>
+          <div class="diagnosis" style="grid-template-columns:1fr; margin-top:13px;">
+            <div class="card"><p class="label">Kort diagnos</p><p class="note">${safe(shopify.diagnostics.traffic)} ${safe(shopify.diagnostics.cartIntent)} ${safe(shopify.diagnostics.checkoutIntent)} ${safe(shopify.diagnostics.purchases)}</p></div>
+            <div class="card"><p class="label">Varning</p><p class="note">${safe(shopify.diagnostics.warning)}</p></div>
+          </div>
+        </article>
+      </div>
+      <div class="next-grid" style="margin-top:13px;">
+        <article class="card"><p class="label">Device split</p><div class="split-panel">${splitCards(shopify.deviceSplit, "split-row")}</div></article>
+        <article class="card"><p class="label">Social traffic split</p><div class="split-panel">${splitCards(shopify.socialTrafficSplit, "split-row")}</div></article>
+        <article class="card"><p class="label">Vad betyder det?</p><div class="value small">Se hela vagen</div><p class="note">Om klick finns men kop saknas: kontrollera produktvy, varukorg och checkout innan skalning.</p></article>
+        <article class="card"><p class="label">Data source</p><div class="value small">${shopify.mode === "fallback" ? "Placeholder" : "Provided"}</div><p class="note">${shopify.mode === "fallback" ? "Live Shopify funnel saknas i repot." : "Funneldata lastes fran konfigurerad kallfil/JSON."}</p></article>
+      </div>
+    </section>
+
     <section class="section" aria-labelledby="next-post-title">
-      <div class="section-head"><div><p class="eyebrow">Today / Next Post</p><h2 id="next-post-title">Nasta schemalagda post</h2></div><p class="hint">Visar vad som hander harnast i organiskt schema.</p></div>
+      <div class="section-head"><div><p class="eyebrow">4. Today / Next Post</p><h2 id="next-post-title">Nasta schemalagda post</h2></div><p class="hint">Visar vad som hander harnast i organiskt schema.</p></div>
       <div class="next-grid">
         <article class="card"><p class="label">Next scheduled post time</p><div class="value small">${safe(organic.nextPost.time)}</div><p class="note">Nasta tid i schemat.</p></article>
         <article class="card"><p class="label">Next product focus</p><div class="value small">${safe(organic.nextPost.product)}</div><p class="note">Produkt som pushas harnast.</p></article>
@@ -524,13 +689,13 @@ function renderDashboard(data) {
     </section>
 
     <section class="section" aria-labelledby="organic-title">
-      <div class="section-head"><div><p class="eyebrow">3. Organic Schedule</p><h2 id="organic-title">Organiskt schema</h2></div><p class="hint">Generatorn visar schemat men postar eller schemalagger inget.</p></div>
+      <div class="section-head"><div><p class="eyebrow">5. Organic Schedule</p><h2 id="organic-title">Organiskt schema</h2></div><p class="hint">Generatorn visar schemat men postar eller schemalagger inget.</p></div>
       <div class="schedule-list">${scheduleRows(organic.schedule)}
       </div>
     </section>
 
     <section class="section" aria-labelledby="risk-title">
-      <div class="section-head"><div><p class="eyebrow">4. Organic Risk Summary</p><h2 id="risk-title">Organiska risker</h2></div><p class="hint">En lugn checklista for forbattrringar.</p></div>
+      <div class="section-head"><div><p class="eyebrow">6. Organic Risk Summary</p><h2 id="risk-title">Organiska risker</h2></div><p class="hint">En lugn checklista for forbattrringar.</p></div>
       <div class="risk-grid">
         <article class="card"><span class="badge warn">Needs video</span><p class="value small">TikTok stillbilder</p><p class="note">TikTok-poster med stillbild behover kort video senare.</p></article>
         <article class="card"><span class="badge check">Missing YouTube</span><p class="value small">YouTube Shorts saknas</p><p class="note">Lagg till nar videoformat ar bekraftat.</p></article>
@@ -540,13 +705,13 @@ function renderDashboard(data) {
     </section>
 
     <section class="section" aria-labelledby="product-push-title">
-      <div class="section-head"><div><p class="eyebrow">5. Product Push Map</p><h2 id="product-push-title">Vad pushas mest?</h2></div><p class="hint">Raknar schemalagda organiska poster per produkt.</p></div>
+      <div class="section-head"><div><p class="eyebrow">7. Product Push Map</p><h2 id="product-push-title">Vad pushas mest?</h2></div><p class="hint">Raknar schemalagda organiska poster per produkt.</p></div>
       <div class="product-grid">${productCards(organic.productCounts)}
       </div>
     </section>
 
     <section class="action-card" aria-labelledby="next-action-title">
-      <div><p class="eyebrow">6. Next Best Action</p><h2 id="next-action-title">Keep the current schedule.</h2><p>Next improvement: replace TikTok still images with short videos and add a standalone Money Clarity Reset post after video assets are confirmed.</p></div>
+      <div><p class="eyebrow">8. Next Best Action</p><h2 id="next-action-title">Keep the current schedule.</h2><p>Next improvement: replace TikTok still images with short videos and add a standalone Money Clarity Reset post after video assets are confirmed. Do not scale ads hard until Shopify funnel shows real purchase signal.</p></div>
       <div class="action-badge">Keep schedule</div>
     </section>
 

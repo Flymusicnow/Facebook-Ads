@@ -28,6 +28,7 @@ jobs:
           META_API_VERSION: v25.0
           BLOTATO_TOKEN: ${{ secrets.BLOTATO_TOKEN }}
           BLOTATO_SCHEDULE_URL: ${{ secrets.BLOTATO_SCHEDULE_URL }}
+          SHOPIFY_FUNNEL_JSON: ${{ secrets.SHOPIFY_FUNNEL_JSON }}
         run: npm run update:control-room
 
       - name: Commit dashboard update
