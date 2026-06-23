@@ -35,6 +35,8 @@ class FetchMetaReportFallbackTests(unittest.TestCase):
 
         self.assertIn("Meta Ads Kontroll", html)
         self.assertIn("Visningar", html)
+        self.assertIn("Öppna Control Room", html)
+        self.assertIn("/reports/the-clarity-shop-control-room/latest.html", html)
 
 
 if __name__ == "__main__":
