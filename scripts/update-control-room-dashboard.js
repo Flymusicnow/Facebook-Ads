@@ -74,27 +74,28 @@ const FALLBACK_META = {
 
 const FALLBACK_SHOPIFY = {
   mode: "fallback",
-  sessions: "Finns",
-  cartAdditions: "Finns",
-  checkoutReached: "Finns",
-  completedCheckouts: "0 verifierade",
-  conversionRate: "Saknas",
+  sourceLabel: "Manual 7-day Shopify Analytics snapshot",
+  sessions: "183",
+  cartAdditions: "7",
+  checkoutReached: "12",
+  completedCheckouts: "2",
+  conversionRate: "ca 1,09%",
+  socialSessions: "32",
   deviceSplit: [
-    { label: "Mobil", value: "Saknas" },
-    { label: "Desktop", value: "Saknas" },
-    { label: "Surfplatta", value: "Saknas" },
+    { label: "Desktop", value: "115" },
+    { label: "Mobile", value: "68" },
   ],
   socialTrafficSplit: [
-    { label: "Facebook", value: "Saknas" },
-    { label: "Instagram", value: "Saknas" },
+    { label: "Facebook", value: "26" },
+    { label: "Instagram", value: "6" },
     { label: "TikTok", value: "Saknas" },
   ],
   diagnostics: {
-    traffic: "Ja, sessioner finns.",
-    cartIntent: "Ja, add to cart finns.",
-    checkoutIntent: "Ja, checkout har natts.",
-    purchases: "Testkop fungerar. Inga verifierade icke-testkop annu.",
-    warning: "Funneldata ar inte live annu. Bekrafta riktiga Shopify Analytics-tal innan skalning.",
+    traffic: "Trafik kommer in: 183 sessioner senaste 7 dagarna.",
+    cartIntent: "Cart intent finns, men ar relativt lag: 7 sessioner med cart additions.",
+    checkoutIntent: "Checkout intent finns: 12 sessioner nadde checkout.",
+    purchases: "2 completed checkouts syns i Shopify Analytics.",
+    warning: "Completed checkouts kan inkludera testkop. Rakna dem inte som bekraftade riktiga kundkop innan orderkalla och kundtyp ar verifierade.",
   },
 };
 
@@ -389,6 +390,8 @@ function normalizeShopifyFunnel(raw = {}) {
     checkoutReached: displayMetric(checkouts),
     completedCheckouts: displayMetric(completed),
     conversionRate: displayPercent(conversion),
+    socialSessions: displayMetric(raw.socialSessions || raw.social_sessions),
+    sourceLabel: raw.sourceLabel || raw.source_label || "Provided Shopify funnel data",
     deviceSplit: normalizeSplit(raw.deviceSplit || raw.device_split || raw.devices, FALLBACK_SHOPIFY.deviceSplit),
     socialTrafficSplit: normalizeSplit(raw.socialTrafficSplit || raw.social_traffic_split || raw.socialTraffic || raw.social, FALLBACK_SHOPIFY.socialTrafficSplit),
     diagnostics: {
@@ -428,7 +431,7 @@ async function fetchShopify(env) {
 
   return {
     data: FALLBACK_SHOPIFY,
-    status: "Shopify live funnel data missing. Showing known signals placeholder.",
+    status: "Shopify live funnel data missing. Showing manual 7-day Shopify Analytics snapshot.",
   };
 }
 
@@ -605,7 +608,7 @@ function renderDashboard(data) {
           <span class="pill">Datum: ${safe(data.today)}</span>
           <span class="pill">Meta Ads: ${meta.mode === "live" ? "live data" : "fallback"}</span>
           <span class="pill">Blotato: ${organic.mode === "live" ? "live data" : "last known schedule"}</span>
-          <span class="pill">Shopify: ${shopify.mode === "fallback" ? "placeholder" : "provided funnel data"}</span>
+          <span class="pill">Shopify: ${shopify.mode === "fallback" ? "manual snapshot" : "provided funnel data"}</span>
         </div>
         <div class="status-row">${data.statusMessages.map((message) => `<span class="pill">${safe(message)}</span>`).join("")}</div>
       </div>
@@ -658,12 +661,12 @@ function renderDashboard(data) {
           <article class="funnel-step"><p class="label">Traffic arriving</p><strong>${safe(shopify.sessions)}</strong><p class="note">Sessions</p><div class="line"><span style="width:100%"></span></div></article>
           <article class="funnel-step"><p class="label">Cart intent</p><strong>${safe(shopify.cartAdditions)}</strong><p class="note">Sessions with cart additions</p><div class="line"><span style="width:72%"></span></div></article>
           <article class="funnel-step"><p class="label">Checkout intent</p><strong>${safe(shopify.checkoutReached)}</strong><p class="note">Reached checkout</p><div class="line"><span style="width:48%"></span></div></article>
-          <article class="funnel-step"><p class="label">Purchases</p><strong>${safe(shopify.completedCheckouts)}</strong><p class="note">Completed checkout</p><div class="line"><span style="width:18%"></span></div></article>
+          <article class="funnel-step"><p class="label">Completed checkout</p><strong>${safe(shopify.completedCheckouts)}</strong><p class="note">Kan innehalla testkop</p><div class="line"><span style="width:18%"></span></div></article>
         </div>
         <article class="card">
           <span class="badge ${shopify.mode === "fallback" ? "check" : "keep"}">Funnel warning</span>
           <p class="value small">${safe(shopify.conversionRate)}</p>
-          <p class="note">Conversion rate</p>
+          <p class="note">Conversion rate senaste 7 dagarna</p>
           <div class="diagnosis" style="grid-template-columns:1fr; margin-top:13px;">
             <div class="card"><p class="label">Kort diagnos</p><p class="note">${safe(shopify.diagnostics.traffic)} ${safe(shopify.diagnostics.cartIntent)} ${safe(shopify.diagnostics.checkoutIntent)} ${safe(shopify.diagnostics.purchases)}</p></div>
             <div class="card"><p class="label">Varning</p><p class="note">${safe(shopify.diagnostics.warning)}</p></div>
@@ -672,9 +675,9 @@ function renderDashboard(data) {
       </div>
       <div class="next-grid" style="margin-top:13px;">
         <article class="card"><p class="label">Device split</p><div class="split-panel">${splitCards(shopify.deviceSplit, "split-row")}</div></article>
-        <article class="card"><p class="label">Social traffic split</p><div class="split-panel">${splitCards(shopify.socialTrafficSplit, "split-row")}</div></article>
+        <article class="card"><p class="label">Social traffic</p><div class="value small">${safe(shopify.socialSessions || "Saknas")}</div><p class="note">Social sessions senaste 7 dagarna</p><div class="split-panel" style="margin-top:10px;">${splitCards(shopify.socialTrafficSplit, "split-row")}</div></article>
         <article class="card"><p class="label">Vad betyder det?</p><div class="value small">Se hela vagen</div><p class="note">Om klick finns men kop saknas: kontrollera produktvy, varukorg och checkout innan skalning.</p></article>
-        <article class="card"><p class="label">Data source</p><div class="value small">${shopify.mode === "fallback" ? "Placeholder" : "Provided"}</div><p class="note">${shopify.mode === "fallback" ? "Live Shopify funnel saknas i repot." : "Funneldata lastes fran konfigurerad kallfil/JSON."}</p></article>
+        <article class="card"><p class="label">Data source</p><div class="value small">${shopify.mode === "fallback" ? "Manual snapshot" : "Provided"}</div><p class="note">${safe(shopify.sourceLabel || "Shopify Analytics snapshot")}</p></article>
       </div>
     </section>
 

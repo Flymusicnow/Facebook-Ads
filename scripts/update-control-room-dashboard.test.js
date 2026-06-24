@@ -19,9 +19,14 @@ test("builds fallback control room data when live tokens are missing", async () 
   assert.equal(data.meta.mode, "fallback");
   assert.equal(data.organic.mode, "fallback");
   assert.equal(data.shopify.mode, "fallback");
+  assert.equal(data.shopify.sessions, "183");
+  assert.equal(data.shopify.cartAdditions, "7");
+  assert.equal(data.shopify.checkoutReached, "12");
+  assert.equal(data.shopify.completedCheckouts, "2");
+  assert.equal(data.shopify.conversionRate, "ca 1,09%");
   assert.match(data.statusMessages.join(" "), /Meta Ads live data missing/);
   assert.match(data.statusMessages.join(" "), /Blotato live data missing/);
-  assert.match(data.statusMessages.join(" "), /Shopify live funnel data missing/);
+  assert.match(data.statusMessages.join(" "), /manual 7-day Shopify Analytics snapshot/);
   assert.equal(data.organic.schedule.length, 12);
   assert.equal(data.organic.nextPost.time, "22 June 2026 19:00");
 });
@@ -42,8 +47,10 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /Blotato live data missing\. Showing last known schedule\./);
   assert.match(html, /Meta Ads live data missing\. Showing fallback values\./);
   assert.match(html, /Shopify Funnel/);
-  assert.match(html, /0 verifierade/);
-  assert.match(html, /Shopify live funnel data missing\. Showing known signals placeholder\./);
+  assert.match(html, /Completed checkout/);
+  assert.match(html, /ca 1,09%/);
+  assert.match(html, /Completed checkouts kan inkludera testkop/);
+  assert.match(html, /Shopify live funnel data missing\. Showing manual 7-day Shopify Analytics snapshot\./);
   assert.match(html, /1847490/);
   assert.match(html, /Money Clarity Reset/);
 
@@ -120,6 +127,8 @@ test("loads Shopify funnel metrics from provided JSON", async () => {
         reachedCheckout: 4,
         completedCheckouts: 1,
         conversionRate: 0.83,
+        socialSessions: 120,
+        sourceLabel: "Test Shopify Analytics snapshot",
         deviceSplit: { Mobile: 98, Desktop: 22 },
         socialTrafficSplit: { Facebook: 50, Instagram: 44, TikTok: 26 },
       }),
@@ -138,8 +147,10 @@ test("loads Shopify funnel metrics from provided JSON", async () => {
   assert.equal(data.shopify.checkoutReached, "4");
   assert.equal(data.shopify.completedCheckouts, "1");
   assert.equal(data.shopify.conversionRate, "0,83%");
+  assert.equal(data.shopify.socialSessions, "120");
   assert.match(data.statusMessages.join(" "), /Shopify funnel data loaded from provided JSON/);
   assert.match(html, /Mobile/);
   assert.match(html, /Facebook/);
+  assert.match(html, /Test Shopify Analytics snapshot/);
   assert.match(html, /Provided/);
 });

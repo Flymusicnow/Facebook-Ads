@@ -36,13 +36,15 @@ Optional JSON shape for `SHOPIFY_FUNNEL_JSON`:
 
 ```json
 {
-  "sessions": 120,
-  "sessionsWithCartAdditions": 9,
-  "reachedCheckout": 4,
-  "completedCheckouts": 1,
-  "conversionRate": 0.83,
-  "deviceSplit": { "Mobile": 98, "Desktop": 22 },
-  "socialTrafficSplit": { "Facebook": 50, "Instagram": 44, "TikTok": 26 }
+  "sessions": 183,
+  "sessionsWithCartAdditions": 7,
+  "reachedCheckout": 12,
+  "completedCheckouts": 2,
+  "conversionRate": 1.09,
+  "socialSessions": 32,
+  "deviceSplit": { "Desktop": 115, "Mobile": 68 },
+  "socialTrafficSplit": { "Facebook": 26, "Instagram": 6, "TikTok": 0 },
+  "warning": "Completed checkouts may include test purchases."
 }
 ```
 
@@ -56,10 +58,10 @@ The dashboard still builds safely.
 
 - If Meta Ads credentials are missing or the read fails, it shows: `Meta Ads live data missing. Showing fallback values.`
 - If Blotato credentials are missing or the read fails, it shows: `Blotato live data missing. Showing last known schedule.`
-- If Shopify funnel data is missing or invalid, it shows: `Shopify live funnel data missing. Showing known signals placeholder.`
+- If Shopify funnel data is missing or invalid, it shows: `Shopify live funnel data missing. Showing manual 7-day Shopify Analytics snapshot.`
 
 The fallback Blotato schedule is the last known schedule already used in the Control Room.
-The fallback Shopify funnel is a placeholder based on the currently known signals: sessions exist, some add to cart events exist, checkout has been reached, the test purchase works, and no verified non-test purchases are confirmed yet.
+The fallback Shopify funnel is a manual 7-day Shopify Analytics snapshot: 183 sessions, 7 sessions with cart additions, 12 sessions that reached checkout, 2 completed checkouts, about 1.09% conversion rate, 32 social sessions, Facebook 26, Instagram 6, desktop 115, and mobile 68. Completed checkout data is labeled carefully because it may include test purchases until order source and customer type are verified.
 
 ## Archive behavior
 

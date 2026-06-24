@@ -83,9 +83,9 @@
           <span class="pill">Datum: 2026-06-24</span>
           <span class="pill">Meta Ads: live data</span>
           <span class="pill">Blotato: live data</span>
-          <span class="pill">Shopify: placeholder</span>
+          <span class="pill">Shopify: manual snapshot</span>
         </div>
-        <div class="status-row"><span class="pill">Meta Ads live data loaded.</span><span class="pill">Blotato live schedule loaded.</span><span class="pill">Shopify live funnel data missing. Showing known signals placeholder.</span></div>
+        <div class="status-row"><span class="pill">Meta Ads live data loaded.</span><span class="pill">Blotato live schedule loaded.</span><span class="pill">Shopify live funnel data missing. Showing manual 7-day Shopify Analytics snapshot.</span></div>
       </div>
       <aside class="hero-note" aria-label="Dagens enkla slutsats">
         <p class="tiny-label">Dagens enkla slutsats</p>
@@ -133,50 +133,46 @@
       <div class="section-head"><div><p class="eyebrow">3. Shopify Funnel</p><h2 id="shopify-funnel-title">Var tappar kunderna?</h2></div><p class="hint">Rapportvy endast. Inga Shopify-produkter, priser eller checkout-installningar andras.</p></div>
       <div class="funnel-grid">
         <div class="funnel-steps">
-          <article class="funnel-step"><p class="label">Traffic arriving</p><strong>Finns</strong><p class="note">Sessions</p><div class="line"><span style="width:100%"></span></div></article>
-          <article class="funnel-step"><p class="label">Cart intent</p><strong>Finns</strong><p class="note">Sessions with cart additions</p><div class="line"><span style="width:72%"></span></div></article>
-          <article class="funnel-step"><p class="label">Checkout intent</p><strong>Finns</strong><p class="note">Reached checkout</p><div class="line"><span style="width:48%"></span></div></article>
-          <article class="funnel-step"><p class="label">Purchases</p><strong>0 verifierade</strong><p class="note">Completed checkout</p><div class="line"><span style="width:18%"></span></div></article>
+          <article class="funnel-step"><p class="label">Traffic arriving</p><strong>183</strong><p class="note">Sessions</p><div class="line"><span style="width:100%"></span></div></article>
+          <article class="funnel-step"><p class="label">Cart intent</p><strong>7</strong><p class="note">Sessions with cart additions</p><div class="line"><span style="width:72%"></span></div></article>
+          <article class="funnel-step"><p class="label">Checkout intent</p><strong>12</strong><p class="note">Reached checkout</p><div class="line"><span style="width:48%"></span></div></article>
+          <article class="funnel-step"><p class="label">Completed checkout</p><strong>2</strong><p class="note">Kan innehalla testkop</p><div class="line"><span style="width:18%"></span></div></article>
         </div>
         <article class="card">
           <span class="badge check">Funnel warning</span>
-          <p class="value small">Saknas</p>
-          <p class="note">Conversion rate</p>
+          <p class="value small">ca 1,09%</p>
+          <p class="note">Conversion rate senaste 7 dagarna</p>
           <div class="diagnosis" style="grid-template-columns:1fr; margin-top:13px;">
-            <div class="card"><p class="label">Kort diagnos</p><p class="note">Ja, sessioner finns. Ja, add to cart finns. Ja, checkout har natts. Testkop fungerar. Inga verifierade icke-testkop annu.</p></div>
-            <div class="card"><p class="label">Varning</p><p class="note">Funneldata ar inte live annu. Bekrafta riktiga Shopify Analytics-tal innan skalning.</p></div>
+            <div class="card"><p class="label">Kort diagnos</p><p class="note">Trafik kommer in: 183 sessioner senaste 7 dagarna. Cart intent finns, men ar relativt lag: 7 sessioner med cart additions. Checkout intent finns: 12 sessioner nadde checkout. 2 completed checkouts syns i Shopify Analytics.</p></div>
+            <div class="card"><p class="label">Varning</p><p class="note">Completed checkouts kan inkludera testkop. Rakna dem inte som bekraftade riktiga kundkop innan orderkalla och kundtyp ar verifierade.</p></div>
           </div>
         </article>
       </div>
       <div class="next-grid" style="margin-top:13px;">
         <article class="card"><p class="label">Device split</p><div class="split-panel">
           <div class="split-row">
-            <span>Mobil</span>
-            <strong>Saknas</strong>
-          </div>
-          <div class="split-row">
             <span>Desktop</span>
-            <strong>Saknas</strong>
+            <strong>115</strong>
           </div>
           <div class="split-row">
-            <span>Surfplatta</span>
-            <strong>Saknas</strong>
+            <span>Mobile</span>
+            <strong>68</strong>
           </div></div></article>
-        <article class="card"><p class="label">Social traffic split</p><div class="split-panel">
+        <article class="card"><p class="label">Social traffic</p><div class="value small">32</div><p class="note">Social sessions senaste 7 dagarna</p><div class="split-panel" style="margin-top:10px;">
           <div class="split-row">
             <span>Facebook</span>
-            <strong>Saknas</strong>
+            <strong>26</strong>
           </div>
           <div class="split-row">
             <span>Instagram</span>
-            <strong>Saknas</strong>
+            <strong>6</strong>
           </div>
           <div class="split-row">
             <span>TikTok</span>
             <strong>Saknas</strong>
           </div></div></article>
         <article class="card"><p class="label">Vad betyder det?</p><div class="value small">Se hela vagen</div><p class="note">Om klick finns men kop saknas: kontrollera produktvy, varukorg och checkout innan skalning.</p></article>
-        <article class="card"><p class="label">Data source</p><div class="value small">Placeholder</div><p class="note">Live Shopify funnel saknas i repot.</p></article>
+        <article class="card"><p class="label">Data source</p><div class="value small">Manual snapshot</div><p class="note">Manual 7-day Shopify Analytics snapshot</p></article>
       </div>
     </section>
 
