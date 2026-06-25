@@ -114,3 +114,5 @@ Facebook-Ads/
 ## Fallback mode
 
 If secrets are missing, the script still creates a report, but it will show fallback/static data and clearly say that Meta secrets are missing.
+
+Deployment trigger 2026-06-25
