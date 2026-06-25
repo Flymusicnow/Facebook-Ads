@@ -71,9 +71,10 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /\.status-row \.pill/);
   assert.match(html, /main,.wrap,.page,.shell,.container \{ display:block; width:100%; max-width:100%; min-width:0;/);
   assert.match(html, /\.report-canvas,.layout,.layout-wrapper,.grid,.grid-container,.dashboard-grid,.content-grid/);
-  assert.match(html, /display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; position:static !important; transform:none !important;/);
+  assert.match(html, /display:block !important; width:100% !important; min-width:unset !important; max-width:100% !important; position:static !important; transform:none !important;/);
   assert.match(html, /\[class\*="card"\],\[class\*="section"\]/);
-  assert.match(html, /\.hero::before,.hero::after,body::before,body::after,.decor,.decorative-bg,.background-shape,.bg-panel,\[class\*="decor"\] \{ display:none !important; width:0 !important; \}/);
+  assert.match(html, /\*::before,\*::after/);
+  assert.match(html, /\*::before,\*::after,.hero::before,.hero::after,body::before,body::after,.decor,.decorative-bg,.background-shape,.bg-panel,\[class\*="decor"\] \{ display:none !important; width:0 !important; \}/);
   assert.match(html, /Shopify: manuell 7-dagars snapshot/);
   assert.match(html, /manuell 7-dagars snapshot/);
   assert.doesNotMatch(html, /Shopify: placeholder/);
