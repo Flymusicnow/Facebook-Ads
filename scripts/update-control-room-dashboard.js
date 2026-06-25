@@ -69,7 +69,7 @@ const FALLBACK_META = {
   bestAd: "Hook 3v2 - Kontrasten (Transformation)",
   bestAdNote: "2 klick, 7,14% CTR, 8,18 kr CPC.",
   weakestAd: "Hook 3v4 - Kanslan av lattnad (Transformation)",
-  weakestAdNote: "11,58 kr spend, 1 visning, 0 klick. For lite data, men svagast spend-signal idag.",
+  weakestAdNote: "11,58 kr spend, 1 visning, 0 klick. För lite data, men svagast spend-signal idag.",
 };
 
 const FALLBACK_SHOPIFY = {
@@ -92,10 +92,10 @@ const FALLBACK_SHOPIFY = {
   ],
   diagnostics: {
     traffic: "Trafik kommer in: 183 sessioner senaste 7 dagarna.",
-    cartIntent: "Cart intent finns, men ar relativt lag: 7 sessioner med cart additions.",
-    checkoutIntent: "Checkout intent finns: 12 sessioner nadde checkout.",
+    cartIntent: "Cart intent finns, men är relativt låg: 7 sessioner med cart additions.",
+    checkoutIntent: "Checkout intent finns: 12 sessioner nådde checkout.",
     purchases: "2 completed checkouts syns i Shopify Analytics.",
-    warning: "Completed checkouts kan inkludera testkop. Rakna dem inte som bekraftade riktiga kundkop innan orderkalla och kundtyp ar verifierade.",
+    warning: "Completed checkout kan innehålla testköp. Räkna dem inte som bekräftade riktiga kundköp innan orderkälla och kundtyp är verifierade.",
   },
 };
 
@@ -399,7 +399,7 @@ function normalizeShopifyFunnel(raw = {}) {
       cartIntent: Number(cartAdditions || 0) > 0 ? "Ja, vissa lagger i varukorgen." : "Ingen tydlig cart-signal annu.",
       checkoutIntent: Number(checkouts || 0) > 0 ? "Ja, vissa nar checkout." : "Ingen tydlig checkout-signal annu.",
       purchases: Number(completed || 0) > 0 ? "Ja, kop finns i funneldata." : "Inga verifierade kop i funneldata.",
-      warning: raw.warning || raw.funnelWarning || "Folj var kunder tappar mellan varukorg, checkout och kop.",
+      warning: raw.warning || raw.funnelWarning || "Följ var kunder tappar mellan varukorg, checkout och köp.",
     },
   };
 }
@@ -519,10 +519,57 @@ function splitCards(items, className) {
           </div>`).join("");
 }
 
+function parsedNumber(value) {
+  const normalized = String(value ?? "").replace(/\s/g, "").replace(",", ".");
+  const match = normalized.match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function dataSourceLabel(resultMode, liveLabel, fallbackLabel) {
+  return resultMode === "live" || resultMode === "provided" ? liveLabel : fallbackLabel;
+}
+
+function actionQueue() {
+  return [
+    "Skapa Blotato AI-video-preview",
+    "Låt ads fortsätta samla data",
+    "Kontrollera funnel igen imorgon",
+    "Skapa “What’s inside” content",
+    "Retargeting senare när mer data finns",
+  ];
+}
+
+function actionQueueMarkup() {
+  return actionQueue().map((item, index) => `
+          <li><span>${index + 1}</span><strong>${safe(item)}</strong></li>`).join("");
+}
+
+function sourcePills(data, meta, organic, shopify) {
+  const pills = [
+    `Datum: ${data.today}`,
+    `Meta Ads: ${dataSourceLabel(meta.mode, "live data", "fallback")}`,
+    `Blotato: ${dataSourceLabel(organic.mode, "live data", "senaste kända schema")}`,
+    `Shopify: ${shopify.mode === "provided" ? "provided funnel data" : "manuell 7-dagars snapshot"}`,
+  ];
+  return pills.map((pill) => `<span class="pill">${safe(pill)}</span>`).join("");
+}
+
 function renderDashboard(data) {
   const meta = data.meta;
   const organic = data.organic;
   const shopify = data.shopify;
+  const linkClicks = parsedNumber(meta.linkClicks);
+  const purchases = parsedNumber(meta.purchases);
+  const landingPageViews = parsedNumber(meta.landingPageViews);
+  const addToCart = parsedNumber(meta.addToCart);
+  const completedCheckouts = parsedNumber(shopify.completedCheckouts);
+  const tiktokNeedsVideo = organic.schedule.some((item) => String(item.platform).toLowerCase().includes("tiktok") && String(item.mediaType).startsWith("image"));
+  const adsStatus = linkClicks > 0 ? "Fortsätt samla data" : "Bevaka klick";
+  const funnelStatus = completedCheckouts > 0 ? "Trafik finns, köp ej bekräftade" : "Funnel behöver signal";
+  const nextOrganicAction = tiktokNeedsVideo ? "Skapa Blotato-video" : "Behåll schemat";
+  const adDecisionNote = linkClicks > 0
+    ? "För lite data för att stoppa annonser ännu."
+    : "Stoppa/pausa endast om spend fortsätter utan klick eller funnel-signal.";
   return `<!doctype html>
 <html lang="sv">
 <head>
@@ -531,194 +578,179 @@ function renderDashboard(data) {
   <meta name="theme-color" content="#f7f1e6" />
   <title>The Clarity Shop Control Room</title>
   <style>
-    :root { --cream:#f7f1e6; --panel:#fffaf1; --beige:#eadcc8; --gold:#b9965b; --sage:#6f8468; --sage-dark:#43563f; --peach:#e9b59e; --ink:#27231d; --muted:#776d60; --line:rgba(154,121,72,.25); --soft-line:rgba(154,121,72,.15); --shadow:0 18px 50px rgba(67,49,24,.10); --radius:22px; }
+    :root { --cream:#f7f1e6; --panel:#fffaf1; --beige:#eadcc8; --gold:#b9965b; --sage:#6f8468; --sage-dark:#43563f; --yellow:#d8b25f; --red:#b87561; --peach:#e9b59e; --ink:#27231d; --muted:#776d60; --line:rgba(154,121,72,.25); --soft-line:rgba(154,121,72,.15); --shadow:0 16px 42px rgba(67,49,24,.10); --radius:20px; }
     * { box-sizing:border-box; }
-    body { margin:0; color:var(--ink); background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.45; }
-    .wrap { width:min(1180px, 100%); margin:0 auto; padding:22px 16px 48px; }
-    .hero,.card,.section,.action-card { background:rgba(255,250,241,.92); border:1px solid var(--line); box-shadow:var(--shadow); }
-    .hero { display:grid; grid-template-columns:1.25fr .75fr; gap:22px; align-items:end; border-radius:30px; padding:28px; }
-    .eyebrow,.label,.tiny-label { margin:0; color:var(--gold); font-size:12px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    html,body { width:100%; max-width:100%; overflow-x:hidden; }
+    body { margin:0; color:var(--ink); background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); font-family:Inter, Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.5; }
+    .wrap { width:min(1120px, 100%); max-width:100%; margin:0 auto; padding:14px 10px 34px; }
+    .hero,.card,.section,.decision-card,.queue-card { width:100%; max-width:100%; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); }
+    .hero { border-radius:24px; padding:18px; }
+    .eyebrow,.label,.tiny-label { margin:0; color:var(--gold); font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; overflow-wrap:anywhere; }
     h1,h2,h3 { font-family:Georgia, "Times New Roman", serif; font-weight:700; letter-spacing:0; }
-    h1 { margin:8px 0 12px; font-size:clamp(42px, 7vw, 78px); line-height:.95; }
-    h2 { margin:0; font-size:clamp(26px, 4vw, 38px); line-height:1.05; }
-    h3 { margin:0; font-size:22px; line-height:1.15; }
+    h1 { margin:8px 0 10px; font-size:clamp(36px, 11vw, 72px); line-height:.98; overflow-wrap:anywhere; }
+    h2 { margin:0; font-size:clamp(24px, 7vw, 36px); line-height:1.08; }
+    h3 { margin:0; font-size:21px; line-height:1.16; }
+    p,li,span,strong { overflow-wrap:anywhere; }
     p { margin:0; }
-    .sub { max-width:720px; color:var(--muted); font-size:18px; }
-    .hero-note { border:1px solid var(--soft-line); border-radius:20px; padding:16px; background:#fffdf8; }
-    .hero-note strong { display:block; margin-top:4px; font-size:24px; }
-    .source-row,.status-row { display:flex; flex-wrap:wrap; gap:9px; margin-top:20px; }
-    .pill,.badge { display:inline-flex; align-items:center; width:max-content; max-width:100%; border-radius:999px; border:1px solid var(--line); background:#fffdf8; color:var(--muted); font-size:13px; font-weight:850; padding:8px 11px; white-space:normal; }
+    .sub { max-width:760px; color:var(--muted); font-size:18px; }
+    .source-row,.status-row,.period-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; max-width:100%; }
+    .pill,.badge,.period-tab { display:inline-flex; align-items:center; max-width:100%; min-width:0; border-radius:999px; border:1px solid var(--line); background:#fffdf8; color:var(--muted); font-size:13px; font-weight:850; padding:8px 10px; white-space:normal; overflow-wrap:anywhere; }
+    .period-tab.active { color:var(--sage-dark); background:rgba(111,132,104,.16); border-color:rgba(111,132,104,.32); }
+    .period-tab.muted { background:rgba(234,220,200,.45); color:var(--muted); }
     .badge.keep { color:var(--sage-dark); background:rgba(111,132,104,.14); border-color:rgba(111,132,104,.28); }
     .badge.check { color:#8b6225; background:rgba(185,150,91,.16); border-color:rgba(185,150,91,.30); }
     .badge.warn { color:#8a4d35; background:rgba(233,181,158,.20); border-color:rgba(233,181,158,.34); }
     .badge.muted { color:var(--muted); background:rgba(119,109,96,.10); border-color:rgba(119,109,96,.20); }
-    .section { margin-top:18px; border-radius:26px; padding:22px; }
-    .section-head { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:18px; }
-    .hint { max-width:470px; color:var(--muted); font-size:15px; }
-    .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid { display:grid; gap:13px; }
-    .snapshot-grid { grid-template-columns:repeat(6, 1fr); }
-    .signal-grid { grid-template-columns:repeat(4, 1fr); }
-    .product-grid { grid-template-columns:repeat(5, 1fr); }
-    .next-grid,.risk-grid { grid-template-columns:repeat(4, 1fr); }
-    .card { min-width:0; border-radius:var(--radius); padding:16px; }
-    .value { margin-top:8px; font-size:30px; font-weight:950; line-height:1; }
-    .value.small { font-size:22px; line-height:1.12; }
-    .note { margin-top:8px; color:var(--muted); font-size:13px; }
-    .focus-card { grid-column:span 2; background:linear-gradient(135deg, #fffaf1, rgba(111,132,104,.13)); }
-    .ad-hero { display:grid; grid-template-columns:repeat(2, 1fr); gap:14px; margin-bottom:14px; }
-    .ad-name { margin-top:9px; font-size:20px; font-weight:900; }
-    .diagnosis { display:grid; grid-template-columns:repeat(3, 1fr); gap:13px; margin-top:14px; }
-    .diagnosis .card { border-color:rgba(111,132,104,.28); background:rgba(255,253,248,.84); }
-    .diagnosis strong { display:block; margin:7px 0 4px; font-size:20px; }
-    .funnel-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:14px; align-items:stretch; }
-    .funnel-steps { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
-    .funnel-step { min-height:150px; border-radius:20px; padding:15px; border:1px solid var(--soft-line); background:#fffdf8; }
-    .funnel-step strong { display:block; margin-top:9px; font-size:26px; line-height:1; }
-    .funnel-step .line { width:100%; height:8px; margin-top:18px; border-radius:999px; background:var(--beige); overflow:hidden; }
-    .funnel-step .line span { display:block; height:100%; border-radius:999px; background:linear-gradient(90deg, var(--sage), var(--gold)); }
-    .split-panel { display:grid; gap:10px; }
-    .split-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:16px; padding:10px 12px; background:#fffdf8; color:var(--muted); font-size:14px; }
-    .split-row strong { color:var(--ink); font-size:15px; white-space:nowrap; }
-    .schedule-list { display:grid; gap:10px; }
-    .schedule-item { display:grid; grid-template-columns:1.15fr .85fr 1.35fr .85fr .85fr auto; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:18px; background:#fffdf8; padding:12px; }
-    .schedule-item div { min-width:0; color:var(--muted); font-size:14px; }
-    .schedule-item b { display:block; color:var(--ink); font-size:15px; }
-    .product-card { position:relative; overflow:hidden; min-height:156px; }
+    .section { margin-top:14px; border-radius:22px; padding:16px; }
+    .section-head { display:grid; gap:8px; margin-bottom:14px; }
+    .hint { color:var(--muted); font-size:15px; }
+    .grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+    .card,.decision-card,.queue-card { min-width:0; border-radius:var(--radius); padding:14px; }
+    .decision-card { position:relative; overflow:hidden; min-height:130px; }
+    .decision-card.ok { border-color:rgba(111,132,104,.32); background:linear-gradient(135deg, rgba(111,132,104,.16), #fffaf1); }
+    .decision-card.watch { border-color:rgba(216,178,95,.36); background:linear-gradient(135deg, rgba(216,178,95,.18), #fffaf1); }
+    .decision-card.stop { border-color:rgba(184,117,97,.34); background:linear-gradient(135deg, rgba(184,117,97,.16), #fffaf1); }
+    .decision-card strong { display:block; margin-top:8px; font-size:24px; line-height:1.08; }
+    .value { margin-top:8px; font-size:32px; font-weight:950; line-height:1; }
+    .value.small { font-size:22px; line-height:1.14; }
+    .note { margin-top:8px; color:var(--muted); font-size:14px; }
+    .queue-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px; }
+    .queue-list li { display:grid; grid-template-columns:32px 1fr; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:16px; padding:9px 10px; background:#fffdf8; }
+    .queue-list li span { display:grid; place-items:center; width:28px; height:28px; border-radius:999px; background:rgba(185,150,91,.16); color:#7a5a2b; font-weight:950; }
+    .funnel-stack { display:grid; gap:8px; }
+    .funnel-step { display:grid; grid-template-columns:36px minmax(0, 1fr); gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:18px; padding:12px; background:#fffdf8; }
+    .funnel-step .badge { grid-column:2; }
+    .funnel-icon { display:grid; place-items:center; width:36px; height:36px; border-radius:999px; background:rgba(111,132,104,.14); color:var(--sage-dark); font-weight:950; }
+    .funnel-step strong { font-size:20px; }
+    .arrow { text-align:center; color:var(--gold); font-weight:950; line-height:1; }
+    .mini-bars { display:grid; gap:10px; margin-top:10px; }
+    .bar-row { display:grid; gap:6px; }
+    .bar-row .top { display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:14px; }
     .bar { width:100%; height:12px; margin-top:18px; border-radius:999px; overflow:hidden; border:1px solid var(--soft-line); background:var(--beige); }
     .bar span { display:block; height:100%; min-width:6px; border-radius:999px; background:linear-gradient(90deg, var(--sage), var(--gold)); }
-    .push-level { margin-top:11px; color:var(--muted); font-size:14px; }
-    .action-card { margin-top:18px; display:grid; grid-template-columns:1fr auto; gap:18px; align-items:center; border-radius:28px; padding:24px; background:linear-gradient(135deg, var(--sage-dark), #2d3429); color:#fffaf1; }
-    .action-card h2,.action-card p,.action-card .eyebrow { color:#fffaf1; }
-    .action-card p { margin-top:8px; max-width:760px; font-size:20px; font-weight:800; }
-    .action-badge { border:1px solid rgba(255,250,241,.34); border-radius:999px; padding:14px 18px; font-weight:950; white-space:nowrap; background:rgba(255,250,241,.12); }
+    .split-panel { display:grid; gap:8px; margin-top:10px; }
+    .split-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:14px; padding:9px 10px; background:#fffdf8; color:var(--muted); font-size:14px; }
+    .split-row strong { color:var(--ink); font-size:15px; white-space:normal; }
+    .schedule-list { display:grid; gap:8px; }
+    .schedule-item { display:grid; gap:8px; border:1px solid var(--soft-line); border-radius:16px; background:#fffdf8; padding:12px; }
+    .schedule-item div { min-width:0; color:var(--muted); font-size:14px; }
+    .schedule-item b { display:block; color:var(--ink); font-size:15px; }
+    .compact-schedule .schedule-item:nth-child(n+7) { display:none; }
     .footer { padding:22px 0 0; color:var(--muted); text-align:center; font-size:13px; }
     a { color:inherit; text-underline-offset:4px; }
-    @media (max-width:980px) { .hero,.action-card,.ad-hero,.funnel-grid { grid-template-columns:1fr; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid,.funnel-steps { grid-template-columns:repeat(2, 1fr); } .focus-card { grid-column:span 1; } .diagnosis { grid-template-columns:1fr; } .schedule-item { grid-template-columns:1fr 1fr; } .action-badge { width:max-content; white-space:normal; } }
-    @media (max-width:620px) { .wrap { padding:14px 12px 36px; } .hero,.section,.action-card { border-radius:22px; padding:18px; } .snapshot-grid,.signal-grid,.product-grid,.next-grid,.risk-grid,.schedule-item,.funnel-steps { grid-template-columns:1fr; } .section-head { display:grid; } .value { font-size:28px; } }
+    @media (min-width:680px) { .wrap { padding:22px 16px 48px; } .hero,.section { padding:22px; } .decision-row { grid-template-columns:repeat(3, minmax(0, 1fr)); } .metric-grid,.shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .section-head { grid-template-columns:1fr auto; align-items:end; } .funnel-step { grid-template-columns:42px minmax(0, 1fr) auto; } .funnel-step .badge { grid-column:auto; } .schedule-item { grid-template-columns:1.1fr .9fr 1.2fr .8fr .8fr auto; align-items:center; } }
+    @media (min-width:1040px) { .metric-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .funnel-step { grid-template-columns:48px 1fr auto; } }
   </style>
 </head>
 <body>
   <main class="wrap">
     <header class="hero">
-      <div>
-        <p class="eyebrow">The Clarity Shop</p>
-        <h1>Control Room</h1>
-        <p class="sub">En automatisk daglig vy for beslut: annonser, organiskt schema, produktrisk och nasta trygga steg.</p>
-        <div class="source-row" aria-label="Datakallor">
-          <span class="pill">Datum: ${safe(data.today)}</span>
-          <span class="pill">Meta Ads: ${meta.mode === "live" ? "live data" : "fallback"}</span>
-          <span class="pill">Blotato: ${organic.mode === "live" ? "live data" : "last known schedule"}</span>
-          <span class="pill">Shopify: ${shopify.mode === "fallback" ? "manual snapshot" : "provided funnel data"}</span>
-        </div>
-        <div class="status-row">${data.statusMessages.map((message) => `<span class="pill">${safe(message)}</span>`).join("")}</div>
+      <p class="eyebrow">The Clarity Shop</p>
+      <h1>The Clarity Shop Control Room</h1>
+      <p class="sub">Daglig beslutsvy för annonser, organisk trafik, Shopify-funnel och nästa steg.</p>
+      <nav class="period-tabs" aria-label="Perioder">
+        <span class="period-tab active">Idag</span>
+        <span class="period-tab">7 dagar</span>
+        <span class="period-tab muted">30 dagar - kommer senare</span>
+        <span class="period-tab muted">Totalt - saknas</span>
+      </nav>
+      <div class="source-row" aria-label="Datakällor">${sourcePills(data, meta, organic, shopify)}
       </div>
-      <aside class="hero-note" aria-label="Dagens enkla slutsats">
-        <p class="tiny-label">Dagens enkla slutsats</p>
-        <strong>${organic.mode === "live" ? "Schemat ar uppdaterat fran live-data." : "Schema visas fran senaste kanda data."}</strong>
-        <p class="note">TikTok-stillbilder bor ersattas med korta videos nar videoassets ar bekraftade.</p>
-      </aside>
+        <div class="status-row">${data.statusMessages.map((message) => `<span class="pill">${safe(message)}</span>`).join("")}</div>
     </header>
 
-    <section class="section" aria-labelledby="snapshot-title">
-      <div class="section-head"><div><p class="eyebrow">1. Today Snapshot</p><h2 id="snapshot-title">Idag i korthet</h2></div><p class="hint">Snabb vy for dagliga beslut.</p></div>
-      <div class="snapshot-grid">
-        <article class="card"><p class="label">Ad spend today</p><div class="value">${safe(meta.spend)}</div><p class="note">Meta Ads idag.</p></article>
-        <article class="card"><p class="label">Link clicks today</p><div class="value">${safe(meta.linkClicks)}</div><p class="note">Klick till sidan.</p></article>
-        <article class="card"><p class="label">Purchases today</p><div class="value">${safe(meta.purchases)}</div><p class="note">Kop registrerade.</p></article>
-        <article class="card"><p class="label">Scheduled posts today</p><div class="value">${safe(organic.todayPosts.length)}</div><p class="note">Organiska poster idag.</p></article>
-        <article class="card"><p class="label">Next post time</p><div class="value small">${safe(organic.nextPost.time)}</div><p class="note">Nasta organiska publicering.</p></article>
-        <article class="card focus-card"><p class="label">Main product focus</p><div class="value small">${safe(organic.nextPost.product)}</div><p class="note">Nasta produktfokus.</p></article>
+    <section class="section" aria-labelledby="decision-title">
+      <div class="section-head"><div><p class="eyebrow">Beslut först</p><h2 id="decision-title">Vad ska jag göra idag?</h2></div><p class="hint">Skanna dessa tre kort först. Resten är stöddata.</p></div>
+      <div class="decision-row">
+        <article class="decision-card ok"><p class="label">Ads status</p><strong>${safe(adsStatus)}</strong><p class="note">${safe(adDecisionNote)}</p></article>
+        <article class="decision-card watch"><p class="label">Funnel status</p><strong>${safe(funnelStatus)}</strong><p class="note">Completed checkout kan innehålla testköp.</p></article>
+        <article class="decision-card watch"><p class="label">Next best action</p><strong>${safe(nextOrganicAction)}</strong><p class="note">Gör nästa kreativa förbättring, inte en stor budgetändring.</p></article>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="ads-signal-title">
-      <div class="section-head"><div><p class="eyebrow">2. Ads Signal</p><h2 id="ads-signal-title">Annonslaget just nu</h2></div><p class="hint">Lattlast signal fran Meta. Generatorn andrar inga annonser.</p></div>
-      <div class="ad-hero">
-        <article class="card"><span class="badge keep">Best ad right now</span><p class="ad-name">${safe(meta.bestAd)}</p><p class="note">${safe(meta.bestAdNote)}</p></article>
-        <article class="card"><span class="badge warn">Weakest ad right now</span><p class="ad-name">${safe(meta.weakestAd)}</p><p class="note">${safe(meta.weakestAdNote)}</p></article>
+    <section class="section" aria-labelledby="queue-title">
+      <div class="section-head"><div><p class="eyebrow">Prioritet</p><h2 id="queue-title">Next Action Queue</h2></div><p class="hint">Kort lista. Inget annat behöver göras först.</p></div>
+      <ol class="queue-list">${actionQueueMarkup()}
+      </ol>
+    </section>
+
+    <section class="section" aria-labelledby="budget-title">
+      <div class="section-head"><div><p class="eyebrow">Budget & Spend</p><h2 id="budget-title">Budget & Spend</h2></div><p class="hint">Tydlig periodmärkning. Saknade perioder fejkas inte.</p></div>
+      <div class="metric-grid">
+        <article class="card"><p class="label">Spend today</p><div class="value">${safe(meta.spend)}</div><p class="note">Meta Ads - Idag.</p></article>
+        <article class="card"><p class="label">Spend last 7 days</p><div class="value small">kommer senare</div><p class="note">Behöver läggas till från Meta insights.</p></article>
+        <article class="card"><p class="label">Spend total / campaign total</p><div class="value small">saknas</div><p class="note">Total spend saknas - behöver läggas till från Meta campaign insights.</p></article>
+        <article class="card"><p class="label">Remaining budget</p><div class="value small">saknas</div><p class="note">Kräver konfigurerad budget.</p></article>
+        <article class="card"><p class="label">CPC</p><div class="value">${safe(meta.cpc)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">CTR</p><div class="value">${safe(meta.ctr)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">Purchases</p><div class="value">${safe(meta.purchases)}</div><p class="note">Meta Ads idag.</p></article>
+        <article class="card"><p class="label">Cost per purchase</p><div class="value small">${purchases > 0 ? safe(meta.spend) : "saknas"}</div><p class="note">${purchases > 0 ? "Beräknas när köp finns." : "Inga köp idag."}</p></article>
       </div>
-      <div class="signal-grid">
-        <article class="card"><p class="label">CTR</p><div class="value">${safe(meta.ctr)}</div><p class="note">Klicksignal.</p></article>
-        <article class="card"><p class="label">CPC</p><div class="value">${safe(meta.cpc)}</div><p class="note">Kostnad per klick.</p></article>
-        <article class="card"><p class="label">Landing page views</p><div class="value small">${safe(meta.landingPageViews)}</div><p class="note">Fran Meta om tillgangligt.</p></article>
-        <article class="card"><p class="label">Add to cart</p><div class="value">${safe(meta.addToCart)}</div><p class="note">ATC-signal.</p></article>
-        <article class="card"><p class="label">Purchases</p><div class="value">${safe(meta.purchases)}</div><p class="note">Kop.</p></article>
-        <article class="card"><p class="label">Spend</p><div class="value">${safe(meta.spend)}</div><p class="note">Dagens annonskostnad.</p></article>
-        <article class="card"><p class="label">Impressions</p><div class="value">${safe(meta.impressions)}</div><p class="note">Folk ser annonserna.</p></article>
-        <article class="card"><p class="label">Reach</p><div class="value">${safe(meta.reach)}</div><p class="note">Unika personer.</p></article>
-      </div>
-      <div class="diagnosis" aria-label="Enkel diagnos">
-        <article class="card"><p class="label">People are seeing</p><strong>${Number(String(meta.impressions).replace(/\D/g, "")) > 0 ? "Ja" : "Inte an"}</strong><p class="note">Visningar visar om Meta levererar.</p></article>
-        <article class="card"><p class="label">People are clicking</p><strong>${Number(String(meta.linkClicks).replace(/\D/g, "")) > 0 ? "Ja" : "Inte an"}</strong><p class="note">Klick visar om budskapet vacker intresse.</p></article>
-        <article class="card"><p class="label">People are buying / not buying</p><strong>${Number(String(meta.purchases).replace(/\D/g, "")) > 0 ? "Ja" : "Inte an"}</strong><p class="note">Skala inte utan kop eller tydlig checkout-kontroll.</p></article>
+    </section>
+
+    <section class="section" aria-labelledby="visual-funnel-title">
+      <div class="section-head"><div><p class="eyebrow">Visual Funnel</p><h2 id="visual-funnel-title">Från annons till checkout</h2></div><p class="hint">Blandar dagens Meta-signal med 7-dagars Shopify snapshot där live-data saknas.</p></div>
+      <div class="funnel-stack">
+        <article class="funnel-step"><span class="funnel-icon">1</span><div><p class="label">Meta Ads</p><strong>${safe(meta.linkClicks)} klick idag</strong><p class="note">Folk klickar om siffran är över 0.</p></div><span class="badge keep">Idag</span></article>
+        <div class="arrow">↓</div>
+        <article class="funnel-step"><span class="funnel-icon">2</span><div><p class="label">Landing Page Views</p><strong>${safe(meta.landingPageViews)}</strong><p class="note">${landingPageViews > 0 ? `${safe(meta.landingPageViews)} landing page view idag.` : "Landing page view saknas eller är 0 idag."}</p></div><span class="badge check">Idag</span></article>
+        <div class="arrow">↓</div>
+        <article class="funnel-step"><span class="funnel-icon">3</span><div><p class="label">Add to Cart</p><strong>${safe(meta.addToCart)}</strong><p class="note">${addToCart > 0 ? "Cart intent finns idag." : "0 add to cart idag."}</p></div><span class="badge check">Idag</span></article>
+        <div class="arrow">↓</div>
+        <article class="funnel-step"><span class="funnel-icon">4</span><div><p class="label">Checkout Reached</p><strong>${safe(shopify.checkoutReached)}</strong><p class="note">Shopify snapshot senaste 7 dagar.</p></div><span class="badge muted">7 dagar</span></article>
+        <div class="arrow">↓</div>
+        <article class="funnel-step"><span class="funnel-icon">5</span><div><p class="label">Completed Checkout</p><strong>${safe(shopify.completedCheckouts)}</strong><p class="note">${safe(shopify.completedCheckouts)} completed checkouts senaste 7 dagar - kan innehålla testköp.</p></div><span class="badge warn">Varning</span></article>
       </div>
     </section>
 
     <section class="section" aria-labelledby="shopify-funnel-title">
-      <div class="section-head"><div><p class="eyebrow">3. Shopify Funnel</p><h2 id="shopify-funnel-title">Var tappar kunderna?</h2></div><p class="hint">Rapportvy endast. Inga Shopify-produkter, priser eller checkout-installningar andras.</p></div>
-      <div class="funnel-grid">
-        <div class="funnel-steps">
-          <article class="funnel-step"><p class="label">Traffic arriving</p><strong>${safe(shopify.sessions)}</strong><p class="note">Sessions</p><div class="line"><span style="width:100%"></span></div></article>
-          <article class="funnel-step"><p class="label">Cart intent</p><strong>${safe(shopify.cartAdditions)}</strong><p class="note">Sessions with cart additions</p><div class="line"><span style="width:72%"></span></div></article>
-          <article class="funnel-step"><p class="label">Checkout intent</p><strong>${safe(shopify.checkoutReached)}</strong><p class="note">Reached checkout</p><div class="line"><span style="width:48%"></span></div></article>
-          <article class="funnel-step"><p class="label">Completed checkout</p><strong>${safe(shopify.completedCheckouts)}</strong><p class="note">Kan innehalla testkop</p><div class="line"><span style="width:18%"></span></div></article>
-        </div>
-        <article class="card">
-          <span class="badge ${shopify.mode === "fallback" ? "check" : "keep"}">Funnel warning</span>
-          <p class="value small">${safe(shopify.conversionRate)}</p>
-          <p class="note">Conversion rate senaste 7 dagarna</p>
-          <div class="diagnosis" style="grid-template-columns:1fr; margin-top:13px;">
-            <div class="card"><p class="label">Kort diagnos</p><p class="note">${safe(shopify.diagnostics.traffic)} ${safe(shopify.diagnostics.cartIntent)} ${safe(shopify.diagnostics.checkoutIntent)} ${safe(shopify.diagnostics.purchases)}</p></div>
-            <div class="card"><p class="label">Varning</p><p class="note">${safe(shopify.diagnostics.warning)}</p></div>
-          </div>
-        </article>
-      </div>
-      <div class="next-grid" style="margin-top:13px;">
+      <div class="section-head"><div><p class="eyebrow">Shopify Funnel</p><h2 id="shopify-funnel-title">Shopify: manuell 7-dagars snapshot</h2></div><p class="hint">Completed checkout kan innehålla testköp.</p></div>
+      <div class="shopify-grid">
+        <article class="card"><p class="label">Sessions</p><div class="value">${safe(shopify.sessions)}</div><p class="note">7 dagar.</p></article>
+        <article class="card"><p class="label">Add to cart</p><div class="value">${safe(shopify.cartAdditions)}</div><p class="note">Cart intent.</p></article>
+        <article class="card"><p class="label">Checkout reached</p><div class="value">${safe(shopify.checkoutReached)}</div><p class="note">Checkout intent.</p></article>
+        <article class="card"><p class="label">Completed checkout</p><div class="value">${safe(shopify.completedCheckouts)}</div><p class="note">Kan innehålla testköp.</p></article>
+        <article class="card"><p class="label">Conversion rate</p><div class="value small">${safe(shopify.conversionRate)}</div><p class="note">7-dagars snapshot.</p></article>
         <article class="card"><p class="label">Device split</p><div class="split-panel">${splitCards(shopify.deviceSplit, "split-row")}</div></article>
-        <article class="card"><p class="label">Social traffic</p><div class="value small">${safe(shopify.socialSessions || "Saknas")}</div><p class="note">Social sessions senaste 7 dagarna</p><div class="split-panel" style="margin-top:10px;">${splitCards(shopify.socialTrafficSplit, "split-row")}</div></article>
-        <article class="card"><p class="label">Vad betyder det?</p><div class="value small">Se hela vagen</div><p class="note">Om klick finns men kop saknas: kontrollera produktvy, varukorg och checkout innan skalning.</p></article>
-        <article class="card"><p class="label">Data source</p><div class="value small">${shopify.mode === "fallback" ? "Manual snapshot" : "Provided"}</div><p class="note">${safe(shopify.sourceLabel || "Shopify Analytics snapshot")}</p></article>
+        <article class="card"><p class="label">Social traffic</p><div class="value small">${safe(shopify.socialSessions || "Saknas")}</div><p class="note">Social sessions.</p><div class="split-panel">${splitCards(shopify.socialTrafficSplit, "split-row")}</div></article>
+        <article class="card"><p class="label">Funnel diagnosis / warning</p><div class="value small">Bevaka checkout</div><p class="note">${safe(shopify.diagnostics.warning)} Källa: ${safe(shopify.sourceLabel || "Shopify Analytics snapshot")}.</p></article>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="next-post-title">
-      <div class="section-head"><div><p class="eyebrow">4. Today / Next Post</p><h2 id="next-post-title">Nasta schemalagda post</h2></div><p class="hint">Visar vad som hander harnast i organiskt schema.</p></div>
-      <div class="next-grid">
-        <article class="card"><p class="label">Next scheduled post time</p><div class="value small">${safe(organic.nextPost.time)}</div><p class="note">Nasta tid i schemat.</p></article>
-        <article class="card"><p class="label">Next product focus</p><div class="value small">${safe(organic.nextPost.product)}</div><p class="note">Produkt som pushas harnast.</p></article>
-        <article class="card"><p class="label">Platforms posting next</p><div class="value small">${safe(organic.nextPost.platforms)}</div><p class="note">Plattformar vid samma tid.</p></article>
-        <article class="card"><p class="label">Risk note</p><div class="value small">${safe(organic.nextPost.risk)}</div><p class="note">TikTok med stillbild bor bli video senare.</p></article>
+    <section class="section" aria-labelledby="ads-title">
+      <div class="section-head"><div><p class="eyebrow">Ads</p><h2 id="ads-title">Annons-signal</h2></div><p class="hint">Förenklad vy. Ingen annons ändras här.</p></div>
+      <div class="ad-grid">
+        <article class="card"><span class="badge keep">Best ad right now</span><div class="value small">${safe(meta.bestAd)}</div><p class="note">${safe(meta.bestAdNote)}</p></article>
+        <article class="card"><span class="badge warn">Weakest ad right now</span><div class="value small">${safe(meta.weakestAd)}</div><p class="note">${safe(meta.weakestAdNote)}</p></article>
+        <article class="card"><p class="label">CTR</p><div class="value">${safe(meta.ctr)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">CPC</p><div class="value">${safe(meta.cpc)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">Landing page views</p><div class="value">${safe(meta.landingPageViews)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">Add to cart</p><div class="value">${safe(meta.addToCart)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">Purchases</p><div class="value">${safe(meta.purchases)}</div><p class="note">Idag.</p></article>
+        <article class="card"><p class="label">Decision note</p><div class="value small">${safe(adDecisionNote)}</div><p class="note">Stoppa/pausa endast om spend fortsätter utan klick eller funnel-signal.</p></article>
       </div>
     </section>
 
     <section class="section" aria-labelledby="organic-title">
-      <div class="section-head"><div><p class="eyebrow">5. Organic Schedule</p><h2 id="organic-title">Organiskt schema</h2></div><p class="hint">Generatorn visar schemat men postar eller schemalagger inget.</p></div>
-      <div class="schedule-list">${scheduleRows(organic.schedule)}
+      <div class="section-head"><div><p class="eyebrow">Organic / Blotato</p><h2 id="organic-title">Nästa organiska steg</h2></div><p class="hint">Rapporten visar schema men postar eller schemalägger inget.</p></div>
+      <div class="organic-grid">
+        <article class="card"><p class="label">Next post time</p><div class="value small">${safe(organic.nextPost.time)}</div><p class="note">Nästa schemalagda post.</p></article>
+        <article class="card"><p class="label">Main product focus</p><div class="value small">${safe(organic.nextPost.product)}</div><p class="note">Produkt som pushas härnäst.</p></article>
+        <article class="card"><p class="label">TikTok video needed status</p><div class="value small">${tiktokNeedsVideo ? "Video behövs" : "Okej just nu"}</div><p class="note">${safe(organic.nextPost.risk)}</p></article>
+        <article class="card"><p class="label">Blotato status</p><div class="value small">${organic.mode === "live" ? "Live schema" : "Fallback schema"}</div><p class="note">${safe(data.statusMessages.find((message) => message.includes("Blotato")) || "")}</p></article>
+        <article class="card"><p class="label">Next organic action</p><div class="value small">${safe(nextOrganicAction)}</div><p class="note">Prioritera kort video före fler stillbilder.</p></article>
+      </div>
+      <div class="schedule-list compact-schedule" style="margin-top:12px;">${scheduleRows(organic.schedule)}
       </div>
     </section>
 
-    <section class="section" aria-labelledby="risk-title">
-      <div class="section-head"><div><p class="eyebrow">6. Organic Risk Summary</p><h2 id="risk-title">Organiska risker</h2></div><p class="hint">En lugn checklista for forbattrringar.</p></div>
-      <div class="risk-grid">
-        <article class="card"><span class="badge warn">Needs video</span><p class="value small">TikTok stillbilder</p><p class="note">TikTok-poster med stillbild behover kort video senare.</p></article>
-        <article class="card"><span class="badge check">Missing YouTube</span><p class="value small">YouTube Shorts saknas</p><p class="note">Lagg till nar videoformat ar bekraftat.</p></article>
-        <article class="card"><span class="badge check">Product gap</span><p class="value small">Money Clarity Reset saknas</p><p class="note">Ingen standalone-post finns i schemat annu.</p></article>
-        <article class="card"><span class="badge keep">Calmer</span><p class="value small">23 June ar lugnare</p><p class="note">Schemat ar jamnare efter reschedule.</p></article>
-      </div>
+    <section class="section" aria-labelledby="bottom-queue-title">
+      <div class="section-head"><div><p class="eyebrow">Slutbeslut</p><h2 id="bottom-queue-title">Next Action Queue</h2></div><p class="hint">Samma lista längst ner så du slipper scrolla tillbaka.</p></div>
+      <ol class="queue-list">${actionQueueMarkup()}
+      </ol>
     </section>
 
-    <section class="section" aria-labelledby="product-push-title">
-      <div class="section-head"><div><p class="eyebrow">7. Product Push Map</p><h2 id="product-push-title">Vad pushas mest?</h2></div><p class="hint">Raknar schemalagda organiska poster per produkt.</p></div>
-      <div class="product-grid">${productCards(organic.productCounts)}
-      </div>
-    </section>
-
-    <section class="action-card" aria-labelledby="next-action-title">
-      <div><p class="eyebrow">8. Next Best Action</p><h2 id="next-action-title">Keep the current schedule.</h2><p>Next improvement: replace TikTok still images with short videos and add a standalone Money Clarity Reset post after video assets are confirmed. Do not scale ads hard until Shopify funnel shows real purchase signal.</p></div>
-      <div class="action-badge">Keep schedule</div>
-    </section>
-
-    <p class="footer">Generated automatically for The Clarity Shop at ${safe(data.updatedAt)}. Archive: <a href="archive/${safe(data.today)}.html">${safe(data.today)}</a>. Inga Meta Ads, Shopify-installningar, Blotato-poster eller Drive-filer andrades.</p>
+    <p class="footer">Generated automatically for The Clarity Shop at ${safe(data.updatedAt)}. Archive: <a href="archive/${safe(data.today)}.html">${safe(data.today)}</a>. Inga Meta Ads, Shopify-inställningar, Blotato-poster, Shopify-produkter, teman eller Drive-filer ändras.</p>
   </main>
 </body>
 </html>

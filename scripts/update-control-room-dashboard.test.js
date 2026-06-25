@@ -47,12 +47,28 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /Blotato live data missing\. Showing last known schedule\./);
   assert.match(html, /Meta Ads live data missing\. Showing fallback values\./);
   assert.match(html, /Shopify Funnel/);
+  assert.match(html, /Idag/);
+  assert.match(html, /7 dagar/);
+  assert.match(html, /30 dagar/);
+  assert.match(html, /Totalt/);
+  assert.match(html, /Budget & Spend/);
+  assert.match(html, /Next Action Queue/);
   assert.match(html, /Completed checkout/);
   assert.match(html, /ca 1,09%/);
-  assert.match(html, /Completed checkouts kan inkludera testkop/);
+  assert.match(html, /nästa/);
+  assert.match(html, /från/);
+  assert.match(html, /köp/);
+  assert.match(html, /ändras/);
+  assert.match(html, /saknas/);
+  assert.match(html, /manuell/);
+  assert.match(html, /7-dagars/);
+  assert.match(html, /overflow-x:hidden/);
+  assert.match(html, /max-width:100%/);
+  assert.match(html, /Shopify: manuell 7-dagars snapshot/);
+  assert.doesNotMatch(html, /Shopify: placeholder/);
+  assert.match(html, /Completed checkout kan innehålla testköp/);
   assert.match(html, /Shopify live funnel data missing\. Showing manual 7-day Shopify Analytics snapshot\./);
   assert.match(html, /1847490/);
-  assert.match(html, /Money Clarity Reset/);
 
   const written = writeDashboard(html, { outputRoot: outDir, today: "2026-06-22" });
   assert.ok(existsSync(written.latestPath));
@@ -152,5 +168,5 @@ test("loads Shopify funnel metrics from provided JSON", async () => {
   assert.match(html, /Mobile/);
   assert.match(html, /Facebook/);
   assert.match(html, /Test Shopify Analytics snapshot/);
-  assert.match(html, /Provided/);
+  assert.match(html, /provided funnel data/);
 });
