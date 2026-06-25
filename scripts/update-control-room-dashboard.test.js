@@ -64,8 +64,14 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /7-dagars/);
   assert.match(html, /overflow-x:hidden/);
   assert.match(html, /max-width:100%/);
+  assert.match(html, /html,\s*body \{ max-width:100%; overflow-x:hidden; \}/);
+  assert.match(html, /@media \(max-width:600px\)/);
+  assert.match(html, /\.status-row \.pill/);
+  assert.match(html, /\.wrap,.page,.shell,.container \{ width:100%; max-width:100%; min-width:0;/);
   assert.match(html, /Shopify: manuell 7-dagars snapshot/);
+  assert.match(html, /manuell 7-dagars snapshot/);
   assert.doesNotMatch(html, /Shopify: placeholder/);
+  assert.doesNotMatch(html, /\b(nasta|fran|kop|andrar|bekraftade)\b/i);
   assert.match(html, /Completed checkout kan innehålla testköp/);
   assert.match(html, /Shopify live funnel data missing\. Showing manual 7-day Shopify Analytics snapshot\./);
   assert.match(html, /1847490/);

@@ -68,7 +68,7 @@ const FALLBACK_META = {
   addToCart: "0",
   bestAd: "Hook 3v2 - Kontrasten (Transformation)",
   bestAdNote: "2 klick, 7,14% CTR, 8,18 kr CPC.",
-  weakestAd: "Hook 3v4 - Kanslan av lattnad (Transformation)",
+  weakestAd: "Hook 3v4 - Känslan av lättnad (Transformation)",
   weakestAdNote: "11,58 kr spend, 1 visning, 0 klick. För lite data, men svagast spend-signal idag.",
 };
 
@@ -280,7 +280,7 @@ async function fetchMeta(env, fetchImpl) {
         bestAd: best?.name || "Ingen tydlig vinnare",
         bestAdNote: `${number(best?.clicks || 0)} klick, ${percent(best?.ctr || 0)} CTR.`,
         weakestAd: weakest?.name || "Ingen tydlig svagast",
-        weakestAdNote: "Bedoms automatiskt fran klick, CTR och kop.",
+        weakestAdNote: "Bedöms automatiskt från klick, CTR och köp.",
       },
       status: "Meta Ads live data loaded.",
     };
@@ -396,9 +396,9 @@ function normalizeShopifyFunnel(raw = {}) {
     socialTrafficSplit: normalizeSplit(raw.socialTrafficSplit || raw.social_traffic_split || raw.socialTraffic || raw.social, FALLBACK_SHOPIFY.socialTrafficSplit),
     diagnostics: {
       traffic: Number(sessions || 0) > 0 ? "Ja, trafik kommer in." : "Saknas eller 0 sessioner.",
-      cartIntent: Number(cartAdditions || 0) > 0 ? "Ja, vissa lagger i varukorgen." : "Ingen tydlig cart-signal annu.",
-      checkoutIntent: Number(checkouts || 0) > 0 ? "Ja, vissa nar checkout." : "Ingen tydlig checkout-signal annu.",
-      purchases: Number(completed || 0) > 0 ? "Ja, kop finns i funneldata." : "Inga verifierade kop i funneldata.",
+      cartIntent: Number(cartAdditions || 0) > 0 ? "Ja, vissa lägger i varukorgen." : "Ingen tydlig cart-signal ännu.",
+      checkoutIntent: Number(checkouts || 0) > 0 ? "Ja, vissa når checkout." : "Ingen tydlig checkout-signal ännu.",
+      purchases: Number(completed || 0) > 0 ? "Ja, köp finns i funneldata." : "Inga verifierade köp i funneldata.",
       warning: raw.warning || raw.funnelWarning || "Följ var kunder tappar mellan varukorg, checkout och köp.",
     },
   };
@@ -451,7 +451,7 @@ function buildOrganicSummary(schedule) {
       product: nextPost?.product || "Saknas",
       platforms: nextGroup.map((item) => item.platform).join(", ") || "Saknas",
       risk: nextGroup.some((item) => item.platform.toLowerCase().includes("tiktok") && item.mediaType.startsWith("image/"))
-        ? "TikTok ar stillbild"
+        ? "TikTok är stillbild"
         : "Ingen tydlig risk",
     },
     productCounts,
@@ -580,10 +580,13 @@ function renderDashboard(data) {
   <style>
     :root { --cream:#f7f1e6; --panel:#fffaf1; --beige:#eadcc8; --gold:#b9965b; --sage:#6f8468; --sage-dark:#43563f; --yellow:#d8b25f; --red:#b87561; --peach:#e9b59e; --ink:#27231d; --muted:#776d60; --line:rgba(154,121,72,.25); --soft-line:rgba(154,121,72,.15); --shadow:0 16px 42px rgba(67,49,24,.10); --radius:20px; }
     * { box-sizing:border-box; }
-    html,body { width:100%; max-width:100%; overflow-x:hidden; }
-    body { margin:0; color:var(--ink); background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); font-family:Inter, Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.5; }
-    .wrap { width:min(1120px, 100%); max-width:100%; margin:0 auto; padding:14px 10px 34px; }
-    .hero,.card,.section,.decision-card,.queue-card { width:100%; max-width:100%; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); }
+    html,
+    body { max-width:100%; overflow-x:hidden; }
+    html { width:100%; }
+    body { width:100%; margin:0; color:var(--ink); background:var(--cream); font-family:Inter, Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.5; }
+    body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); max-width:100vw; overflow:hidden; }
+    .wrap,.page,.shell,.container { width:100%; max-width:100%; min-width:0; margin:0 auto; padding:14px 10px 34px; box-sizing:border-box; overflow-x:hidden; }
+    .hero,.card,.section,.decision-card,.queue-card { width:100%; max-width:100%; min-width:0; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); box-sizing:border-box; }
     .hero { border-radius:24px; padding:18px; }
     .eyebrow,.label,.tiny-label { margin:0; color:var(--gold); font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; overflow-wrap:anywhere; }
     h1,h2,h3 { font-family:Georgia, "Times New Roman", serif; font-weight:700; letter-spacing:0; }
@@ -593,8 +596,8 @@ function renderDashboard(data) {
     p,li,span,strong { overflow-wrap:anywhere; }
     p { margin:0; }
     .sub { max-width:760px; color:var(--muted); font-size:18px; }
-    .source-row,.status-row,.period-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; max-width:100%; }
-    .pill,.badge,.period-tab { display:inline-flex; align-items:center; max-width:100%; min-width:0; border-radius:999px; border:1px solid var(--line); background:#fffdf8; color:var(--muted); font-size:13px; font-weight:850; padding:8px 10px; white-space:normal; overflow-wrap:anywhere; }
+    .source-row,.status-row,.period-tabs,.pill-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; width:100%; max-width:100%; min-width:0; }
+    .pill,.badge,.period-tab,.status-banner { display:inline-flex; align-items:center; max-width:100%; min-width:0; flex:0 1 auto; border-radius:999px; border:1px solid var(--line); background:#fffdf8; color:var(--muted); font-size:13px; font-weight:850; padding:8px 10px; white-space:normal; overflow-wrap:anywhere; word-break:normal; box-sizing:border-box; }
     .period-tab.active { color:var(--sage-dark); background:rgba(111,132,104,.16); border-color:rgba(111,132,104,.32); }
     .period-tab.muted { background:rgba(234,220,200,.45); color:var(--muted); }
     .badge.keep { color:var(--sage-dark); background:rgba(111,132,104,.14); border-color:rgba(111,132,104,.28); }
@@ -604,7 +607,7 @@ function renderDashboard(data) {
     .section { margin-top:14px; border-radius:22px; padding:16px; }
     .section-head { display:grid; gap:8px; margin-bottom:14px; }
     .hint { color:var(--muted); font-size:15px; }
-    .grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+    .grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid { display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; width:100%; max-width:100%; min-width:0; }
     .card,.decision-card,.queue-card { min-width:0; border-radius:var(--radius); padding:14px; }
     .decision-card { position:relative; overflow:hidden; min-height:130px; }
     .decision-card.ok { border-color:rgba(111,132,104,.32); background:linear-gradient(135deg, rgba(111,132,104,.16), #fffaf1); }
@@ -615,7 +618,7 @@ function renderDashboard(data) {
     .value.small { font-size:22px; line-height:1.14; }
     .note { margin-top:8px; color:var(--muted); font-size:14px; }
     .queue-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px; }
-    .queue-list li { display:grid; grid-template-columns:32px 1fr; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:16px; padding:9px 10px; background:#fffdf8; }
+    .queue-list li { display:grid; grid-template-columns:32px minmax(0, 1fr); gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:16px; padding:9px 10px; background:#fffdf8; min-width:0; }
     .queue-list li span { display:grid; place-items:center; width:28px; height:28px; border-radius:999px; background:rgba(185,150,91,.16); color:#7a5a2b; font-weight:950; }
     .funnel-stack { display:grid; gap:8px; }
     .funnel-step { display:grid; grid-template-columns:36px minmax(0, 1fr); gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:18px; padding:12px; background:#fffdf8; }
@@ -629,7 +632,7 @@ function renderDashboard(data) {
     .bar { width:100%; height:12px; margin-top:18px; border-radius:999px; overflow:hidden; border:1px solid var(--soft-line); background:var(--beige); }
     .bar span { display:block; height:100%; min-width:6px; border-radius:999px; background:linear-gradient(90deg, var(--sage), var(--gold)); }
     .split-panel { display:grid; gap:8px; margin-top:10px; }
-    .split-row { display:flex; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:14px; padding:9px 10px; background:#fffdf8; color:var(--muted); font-size:14px; }
+    .split-row { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; align-items:center; border:1px solid var(--soft-line); border-radius:14px; padding:9px 10px; background:#fffdf8; color:var(--muted); font-size:14px; min-width:0; }
     .split-row strong { color:var(--ink); font-size:15px; white-space:normal; }
     .schedule-list { display:grid; gap:8px; }
     .schedule-item { display:grid; gap:8px; border:1px solid var(--soft-line); border-radius:16px; background:#fffdf8; padding:12px; }
@@ -638,12 +641,13 @@ function renderDashboard(data) {
     .compact-schedule .schedule-item:nth-child(n+7) { display:none; }
     .footer { padding:22px 0 0; color:var(--muted); text-align:center; font-size:13px; }
     a { color:inherit; text-underline-offset:4px; }
-    @media (min-width:680px) { .wrap { padding:22px 16px 48px; } .hero,.section { padding:22px; } .decision-row { grid-template-columns:repeat(3, minmax(0, 1fr)); } .metric-grid,.shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .section-head { grid-template-columns:1fr auto; align-items:end; } .funnel-step { grid-template-columns:42px minmax(0, 1fr) auto; } .funnel-step .badge { grid-column:auto; } .schedule-item { grid-template-columns:1.1fr .9fr 1.2fr .8fr .8fr auto; align-items:center; } }
+    @media (max-width:600px) { body { overflow-x:hidden; } .page,.shell,.container,.wrap,.hero,.section,.card,.decision-card,.queue-card,.pill,.badge,.status-banner { max-width:100%; min-width:0; box-sizing:border-box; } .hero,.section { border-radius:18px; padding:14px; } .decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid,.schedule-item { grid-template-columns:minmax(0, 1fr); } .pill-row,.source-row,.status-row,.period-tabs { display:flex; flex-wrap:wrap; gap:8px; width:100%; } .status-row .pill,.status-banner { width:100%; flex-basis:100%; justify-content:flex-start; } .pill,.period-tab,.status-banner { white-space:normal; overflow-wrap:anywhere; word-break:normal; } h1 { font-size:clamp(32px, 10vw, 42px); } .value { font-size:28px; } body::before { display:none; } }
+    @media (min-width:680px) { .wrap,.page,.shell,.container { width:min(1120px, 100%); padding:22px 16px 48px; } .hero,.section { padding:22px; } .decision-row { grid-template-columns:repeat(3, minmax(0, 1fr)); } .metric-grid,.shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .section-head { grid-template-columns:1fr auto; align-items:end; } .funnel-step { grid-template-columns:42px minmax(0, 1fr) auto; } .funnel-step .badge { grid-column:auto; } .schedule-item { grid-template-columns:1.1fr .9fr 1.2fr .8fr .8fr auto; align-items:center; } }
     @media (min-width:1040px) { .metric-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .funnel-step { grid-template-columns:48px 1fr auto; } }
   </style>
 </head>
 <body>
-  <main class="wrap">
+  <main class="wrap page shell container">
     <header class="hero">
       <p class="eyebrow">The Clarity Shop</p>
       <h1>The Clarity Shop Control Room</h1>
