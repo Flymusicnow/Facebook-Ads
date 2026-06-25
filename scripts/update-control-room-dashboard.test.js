@@ -54,6 +54,8 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /Budget & Spend/);
   assert.match(html, /Next Action Queue/);
   assert.match(html, /Completed checkout/);
+  assert.match(html, /<meta charset="UTF-8" \/>/);
+  assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" \/>/);
   assert.match(html, /ca 1,09%/);
   assert.match(html, /nästa/);
   assert.match(html, /från/);
@@ -64,12 +66,14 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /7-dagars/);
   assert.match(html, /overflow-x:hidden/);
   assert.match(html, /max-width:100%/);
-  assert.match(html, /html,\s*body \{ width:100%; max-width:100%; min-width:0; overflow-x:hidden; \}/);
+  assert.match(html, /html,\s*body \{ width:100%; max-width:100%; min-width:0; overflow-x:hidden; margin:0; padding:0; \}/);
   assert.match(html, /@media \(max-width:600px\)/);
   assert.match(html, /\.status-row \.pill/);
   assert.match(html, /main,.wrap,.page,.shell,.container \{ display:block; width:100%; max-width:100%; min-width:0;/);
-  assert.match(html, /\.layout,.grid,.dashboard-grid,.content-grid/);
-  assert.match(html, /\.hero::before,.hero::after,body::before,body::after,.decor,.background-shape,.bg-panel \{ display:none !important; \}/);
+  assert.match(html, /\.report-canvas,.layout,.layout-wrapper,.grid,.grid-container,.dashboard-grid,.content-grid/);
+  assert.match(html, /display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; position:static !important; transform:none !important;/);
+  assert.match(html, /\[class\*="card"\],\[class\*="section"\]/);
+  assert.match(html, /\.hero::before,.hero::after,body::before,body::after,.decor,.decorative-bg,.background-shape,.bg-panel,\[class\*="decor"\] \{ display:none !important; width:0 !important; \}/);
   assert.match(html, /Shopify: manuell 7-dagars snapshot/);
   assert.match(html, /manuell 7-dagars snapshot/);
   assert.doesNotMatch(html, /Shopify: placeholder/);
