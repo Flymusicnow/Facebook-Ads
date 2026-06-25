@@ -580,13 +580,14 @@ function renderDashboard(data) {
   <style>
     :root { --cream:#f7f1e6; --panel:#fffaf1; --beige:#eadcc8; --gold:#b9965b; --sage:#6f8468; --sage-dark:#43563f; --yellow:#d8b25f; --red:#b87561; --peach:#e9b59e; --ink:#27231d; --muted:#776d60; --line:rgba(154,121,72,.25); --soft-line:rgba(154,121,72,.15); --shadow:0 16px 42px rgba(67,49,24,.10); --radius:20px; }
     * { box-sizing:border-box; }
+    img,svg,canvas,video { max-width:100%; height:auto; }
     html,
-    body { max-width:100%; overflow-x:hidden; }
-    html { width:100%; }
-    body { width:100%; margin:0; color:var(--ink); background:var(--cream); font-family:Inter, Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.5; }
+    body { width:100%; max-width:100%; min-width:0; overflow-x:hidden; }
+    html { margin:0; padding:0; }
+    body { margin:0; padding:0; color:var(--ink); background:var(--cream); font-family:Inter, Atkinson Hyperlegible, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.5; }
     body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); max-width:100vw; overflow:hidden; }
-    .wrap,.page,.shell,.container { width:100%; max-width:100%; min-width:0; margin:0 auto; padding:14px 10px 34px; box-sizing:border-box; overflow-x:hidden; }
-    .hero,.card,.section,.decision-card,.queue-card { width:100%; max-width:100%; min-width:0; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); box-sizing:border-box; }
+    main,.wrap,.page,.shell,.container { display:block; width:100%; max-width:100%; min-width:0; margin-left:auto; margin-right:auto; padding:14px 10px 34px; box-sizing:border-box; overflow-x:hidden; }
+    .hero,.card,.section,.panel,.decision-card,.queue-card,.status-banner { width:100%; max-width:100%; min-width:0; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); box-sizing:border-box; }
     .hero { border-radius:24px; padding:18px; }
     .eyebrow,.label,.tiny-label { margin:0; color:var(--gold); font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; overflow-wrap:anywhere; }
     h1,h2,h3 { font-family:Georgia, "Times New Roman", serif; font-weight:700; letter-spacing:0; }
@@ -607,7 +608,7 @@ function renderDashboard(data) {
     .section { margin-top:14px; border-radius:22px; padding:16px; }
     .section-head { display:grid; gap:8px; margin-bottom:14px; }
     .hint { color:var(--muted); font-size:15px; }
-    .grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid { display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; width:100%; max-width:100%; min-width:0; }
+    .layout,.grid,.dashboard-grid,.content-grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid { display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; width:100%; max-width:100%; min-width:0; }
     .card,.decision-card,.queue-card { min-width:0; border-radius:var(--radius); padding:14px; }
     .decision-card { position:relative; overflow:hidden; min-height:130px; }
     .decision-card.ok { border-color:rgba(111,132,104,.32); background:linear-gradient(135deg, rgba(111,132,104,.16), #fffaf1); }
@@ -641,7 +642,7 @@ function renderDashboard(data) {
     .compact-schedule .schedule-item:nth-child(n+7) { display:none; }
     .footer { padding:22px 0 0; color:var(--muted); text-align:center; font-size:13px; }
     a { color:inherit; text-underline-offset:4px; }
-    @media (max-width:600px) { body { overflow-x:hidden; } .page,.shell,.container,.wrap,.hero,.section,.card,.decision-card,.queue-card,.pill,.badge,.status-banner { max-width:100%; min-width:0; box-sizing:border-box; } .hero,.section { border-radius:18px; padding:14px; } .decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid,.schedule-item { grid-template-columns:minmax(0, 1fr); } .pill-row,.source-row,.status-row,.period-tabs { display:flex; flex-wrap:wrap; gap:8px; width:100%; } .status-row .pill,.status-banner { width:100%; flex-basis:100%; justify-content:flex-start; } .pill,.period-tab,.status-banner { white-space:normal; overflow-wrap:anywhere; word-break:normal; } h1 { font-size:clamp(32px, 10vw, 42px); } .value { font-size:28px; } body::before { display:none; } }
+    @media (max-width:600px) { html,body { width:100%; max-width:100%; min-width:0; overflow-x:hidden; } body { margin:0; padding:0; } main,.wrap,.page,.shell,.container { display:block; width:100%; max-width:100%; min-width:0; margin-left:auto; margin-right:auto; padding-left:12px; padding-right:12px; box-sizing:border-box; overflow-x:hidden; } .layout,.grid,.dashboard-grid,.content-grid,.decision-row,.metric-grid,.shopify-grid,.organic-grid,.ad-grid,.schedule-item { display:block; width:100%; max-width:100%; min-width:0; } .hero,.section,.card,.panel,.decision-card,.queue-card,.pill,.badge,.status-banner { width:100%; max-width:100%; min-width:0; box-sizing:border-box; } .hero,.section { border-radius:18px; padding:14px; } .pill-row,.source-row,.status-row,.period-tabs { display:flex; flex-wrap:wrap; gap:8px; width:100%; max-width:100%; } .status-row .pill,.status-banner { width:100%; flex-basis:100%; justify-content:flex-start; } .pill,.period-tab,.status-banner { white-space:normal; overflow-wrap:anywhere; word-break:normal; } h1 { font-size:clamp(32px, 10vw, 42px); } .value { font-size:28px; } .hero::before,.hero::after,body::before,body::after,.decor,.background-shape,.bg-panel { display:none !important; } }
     @media (min-width:680px) { .wrap,.page,.shell,.container { width:min(1120px, 100%); padding:22px 16px 48px; } .hero,.section { padding:22px; } .decision-row { grid-template-columns:repeat(3, minmax(0, 1fr)); } .metric-grid,.shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } .section-head { grid-template-columns:1fr auto; align-items:end; } .funnel-step { grid-template-columns:42px minmax(0, 1fr) auto; } .funnel-step .badge { grid-column:auto; } .schedule-item { grid-template-columns:1.1fr .9fr 1.2fr .8fr .8fr auto; align-items:center; } }
     @media (min-width:1040px) { .metric-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .shopify-grid,.organic-grid,.ad-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); } .funnel-step { grid-template-columns:48px 1fr auto; } }
   </style>

@@ -64,10 +64,12 @@ test("renders and writes latest plus dated archive", async () => {
   assert.match(html, /7-dagars/);
   assert.match(html, /overflow-x:hidden/);
   assert.match(html, /max-width:100%/);
-  assert.match(html, /html,\s*body \{ max-width:100%; overflow-x:hidden; \}/);
+  assert.match(html, /html,\s*body \{ width:100%; max-width:100%; min-width:0; overflow-x:hidden; \}/);
   assert.match(html, /@media \(max-width:600px\)/);
   assert.match(html, /\.status-row \.pill/);
-  assert.match(html, /\.wrap,.page,.shell,.container \{ width:100%; max-width:100%; min-width:0;/);
+  assert.match(html, /main,.wrap,.page,.shell,.container \{ display:block; width:100%; max-width:100%; min-width:0;/);
+  assert.match(html, /\.layout,.grid,.dashboard-grid,.content-grid/);
+  assert.match(html, /\.hero::before,.hero::after,body::before,body::after,.decor,.background-shape,.bg-panel \{ display:none !important; \}/);
   assert.match(html, /Shopify: manuell 7-dagars snapshot/);
   assert.match(html, /manuell 7-dagars snapshot/);
   assert.doesNotMatch(html, /Shopify: placeholder/);
