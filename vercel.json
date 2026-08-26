@@ -9,6 +9,10 @@
     {
       "source": "/meta-ads",
       "destination": "/reports/meta-ads/latest.html"
+    },
+    {
+      "source": "/seo-audit",
+      "destination": "/reports/shopify-seo-audit/latest.html"
     }
   ]
 }
