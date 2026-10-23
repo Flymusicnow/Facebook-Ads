@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f7f1e6" />
+  <title>The Clarity Shop — SEO Audit</title>
+  <style>
+    :root { --cream:#f7f1e6; --panel:#fffaf1; --beige:#eadcc8; --gold:#b9965b; --sage:#6f8468; --sage-dark:#43563f; --yellow:#d8b25f; --red:#b87561; --peach:#e9b59e; --ink:#27231d; --muted:#776d60; --line:rgba(154,121,72,.25); --soft-line:rgba(154,121,72,.15); --shadow:0 16px 42px rgba(67,49,24,.10); --radius:20px; }
+    * { box-sizing:border-box; }
+    html,body { width:100%; max-width:100%; overflow-x:hidden; margin:0; padding:0; }
+    body { color:var(--ink); background:var(--cream); font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height:1.55; }
+    body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; background:linear-gradient(135deg, rgba(185,150,91,.16), transparent 30%),linear-gradient(225deg, rgba(111,132,104,.14), transparent 28%),var(--cream); }
+    main { display:block; width:100%; max-width:960px; margin:0 auto; padding:16px 12px 40px; }
+    .hero,.card,.section { width:100%; background:rgba(255,250,241,.94); border:1px solid var(--line); box-shadow:var(--shadow); box-sizing:border-box; border-radius:22px; }
+    .hero { padding:20px; }
+    .eyebrow { margin:0; color:var(--gold); font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    h1,h2,h3 { font-family:Georgia, "Times New Roman", serif; font-weight:700; }
+    h1 { margin:8px 0 6px; font-size:clamp(28px, 7vw, 44px); line-height:1.05; }
+    h2 { margin:0 0 4px; font-size:clamp(20px, 5vw, 26px); }
+    h3 { margin:0 0 6px; font-size:17px; }
+    p { margin:0 0 8px; }
+    p:last-child { margin-bottom:0; }
+    .sub { max-width:640px; color:var(--muted); font-size:16px; }
+    .meta-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+    .pill { display:inline-flex; align-items:center; border-radius:999px; border:1px solid var(--line); background:#fffdf8; color:var(--muted); font-size:13px; font-weight:700; padding:7px 12px; }
+    .section { margin-top:14px; padding:18px; }
+    .score-grid { display:grid; grid-template-columns:1fr; gap:10px; margin-top:8px; }
+    .score-card { border-radius:16px; padding:14px; border:1px solid var(--soft-line); background:#fffdf8; text-align:center; }
+    .score-card .num { font-family:Georgia,serif; font-size:32px; font-weight:800; line-height:1; }
+    .score-card .lbl { margin-top:6px; color:var(--muted); font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .score-card.crit .num { color:#8a4d35; }
+    .score-card.imp .num { color:#8b6225; }
+    .score-card.good .num { color:var(--sage-dark); }
+    .issue { border-radius:16px; padding:14px 16px; margin-top:10px; border:1px solid var(--soft-line); background:#fffdf8; }
+    .issue.crit { border-color:rgba(184,117,97,.4); background:linear-gradient(135deg, rgba(184,117,97,.10), #fffaf1); }
+    .issue.imp { border-color:rgba(216,178,95,.4); background:linear-gradient(135deg, rgba(216,178,95,.12), #fffaf1); }
+    .issue.good { border-color:rgba(111,132,104,.35); background:linear-gradient(135deg, rgba(111,132,104,.10), #fffaf1); }
+    .issue.gap { border-color:rgba(154,121,72,.3); }
+    .badge { display:inline-block; font-size:11px; font-weight:900; letter-spacing:.05em; text-transform:uppercase; padding:3px 9px; border-radius:999px; margin-bottom:8px; }
+    .badge.crit { color:#fff; background:#b87561; }
+    .badge.imp { color:#4a3410; background:#d8b25f; }
+    .badge.good { color:#fff; background:#6f8468; }
+    .badge.gap { color:#5a4a2e; background:#eadcc8; }
+    .fix { margin-top:8px; padding-top:8px; border-top:1px dashed var(--soft-line); font-size:14px; color:var(--muted); }
+    .fix b { color:var(--ink); }
+    ul.tight { margin:6px 0 0; padding-left:18px; }
+    ul.tight li { margin-bottom:4px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+    th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--soft-line); vertical-align:top; }
+    th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .tag-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .tag { background:var(--beige); color:#5a4a2e; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; }
+    .note-box { border-radius:16px; padding:14px 16px; margin-top:10px; border:1px dashed var(--line); background:#fffdf8; font-size:14px; color:var(--muted); }
+    .footer { padding:20px 0 0; color:var(--muted); text-align:center; font-size:13px; }
+    a { color:#7a5a2b; }
+    @media (min-width:680px) { main { padding:26px 16px 50px; } .hero,.section { padding:26px; } .score-grid { grid-template-columns:repeat(3, 1fr); } }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <p class="eyebrow">SEO Audit</p>
+      <h1>The Clarity Shop</h1>
+      <p class="sub">Full audit of theclarityshop.se based on live Shopify Admin data (products, collections, blog, shop settings) pulled directly from the connected store.</p>
+      <div class="meta-row">
+        <span class="pill">Domain: theclarityshop.se</span>
+        <span class="pill">Plan: Basic</span>
+        <span class="pill">Products: 8 active</span>
+        <span class="pill">Generated: 2026-07-03</span>
+      </div>
+    </header>
+
+    <section class="section">
+      <h2>Vad ska jag göra idag?</h2>
+      <p class="sub">Kort sammanfattning på svenska av de tre viktigaste sakerna att fixa denna vecka:</p>
+      <ul class="tight">
+        <li><b>1. Byt butikens språk till engelska</b> i Shopify-inställningarna. Just nu är butikens standardspråk svenska, men allt innehåll (produkttexter, SEO-texter) är på engelska för en engelsktalande målgrupp. Det förvirrar Google om vilken marknad sidan riktar sig till.</li>
+        <li><b>2. Lägg till alt-text på alla produktbilder.</b> Alla 8 produkter saknar helt alt-text idag — det är en enkel fix som hjälper både bildsökning och tillgänglighet.</li>
+        <li><b>3. Skapa 6 kategorisidor (collections)</b> utifrån taggarna som redan finns (relationships, self-worth, money, parenting, health, career). Idag finns bara en tom startsida-collection.</li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <h2>Overview</h2>
+      <div class="score-grid">
+        <div class="score-card crit"><div class="num">4</div><div class="lbl">Critical issues</div></div>
+        <div class="score-card imp"><div class="num">3</div><div class="lbl">Important gaps</div></div>
+        <div class="score-card good"><div class="num">4</div><div class="lbl">Things working well</div></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Critical issues</h2>
+      <p class="sub">These have the biggest effect on whether Google can find, understand, and rank the store correctly.</p>
+
+      <div class="issue crit">
+        <span class="badge crit">Critical</span>
+        <h3>Store language is set to Swedish, but every page is written in English</h3>
+        <p>All checkout/legal policy pages resolve with <code>locale=sv</code> and the site templates declare <code>lang="sv"</code>, meaning Shopify's default storefront language is Swedish. But every product title, description, and SEO tag is in English, written for an English-speaking self-help audience, priced in USD. This sends Google a contradictory signal: the declared language says Swedish, the actual text says English. That mismatch can suppress visibility in English-language search results — the exact market this store is trying to reach — because search engines partly rely on declared language/locale to decide which market and language results to surface a page in.</p>
+        <div class="fix"><b>Fix:</b> In Shopify Admin → Settings → Languages, make English the store's primary/published language (or add English via Markets and set it as default for the audience you sell to). If Swedish is genuinely needed for a Swedish audience, set up proper multi-language / hreflang via Shopify Markets instead of leaving the mismatch as-is.</div>
+      </div>
+
+      <div class="issue crit">
+        <span class="badge crit">Critical</span>
+        <h3>Every product image is missing alt text</h3>
+        <p>Checked all 8 active products — every featured image and every additional product image has blank or null alt text. This is a 100% gap across the entire catalog. Alt text is one of the few remaining direct, easy levers for image search ranking and it also matters for accessibility (screen readers) and for context when images fail to load.</p>
+        <div class="fix"><b>Fix:</b> Add a short, descriptive, keyword-natural alt text to each product image, e.g. "The Self-Worth Reset — 7-day digital PDF workbook cover" instead of leaving it blank.</div>
+      </div>
+
+      <div class="issue crit">
+        <span class="badge crit">Critical</span>
+        <h3>No category pages exist despite ready-made topic tags</h3>
+        <p>The only collection in the store is the auto-generated "Home page" collection (handle: <code>frontpage</code>), and it has no SEO title or meta description set. Meanwhile every product is already tagged by topic — <code>relationships</code>, <code>self-worth</code>, <code>money</code>, <code>parenting</code>, <code>health &amp; wellness</code>, <code>career &amp; business</code> — but none of those tags have been turned into actual collection pages. That's 6 free, keyword-relevant landing pages the store isn't using, plus better internal linking and easier navigation for visitors.</p>
+        <div class="tag-list">
+          <span class="tag">relationships</span><span class="tag">self-worth</span><span class="tag">money</span><span class="tag">parenting</span><span class="tag">health &amp; wellness</span><span class="tag">career &amp; business</span>
+        </div>
+        <div class="fix"><b>Fix:</b> Create a smart collection per tag (e.g. "Relationship Workbooks", "Self-Worth Workbooks"), each with its own SEO title/description targeting that topic, and link them in the main navigation.</div>
+      </div>
+
+      <div class="issue crit">
+        <span class="badge crit">Critical</span>
+        <h3>Homepage has no meta description set</h3>
+        <p>The shop-level SEO description field (used for the homepage's search snippet) is blank. Without it, Google will auto-generate a snippet from whatever text it finds on the page — usually worse at converting clicks than a written one.</p>
+        <div class="fix"><b>Fix:</b> Online Store → Preferences → set a homepage title and meta description (under ~155 characters) that states what the store sells and who it's for.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Important gaps</h2>
+
+      <div class="issue imp">
+        <span class="badge imp">Important</span>
+        <h3>Blog exists but has zero published posts</h3>
+        <p>A "News" blog is set up but has no articles. This niche — relationship clarity, self-worth, money stress, parenting overwhelm — is unusually well suited to long-tail organic content (the kind of specific questions people type into Google before they're ready to buy). Right now the store has no content engine at all, and it's a brand-new domain with no existing authority, so organic growth will depend heavily on this.</p>
+        <div class="fix"><b>Fix:</b> Start a simple monthly content calendar — 2-4 posts/month answering real questions tied to each workbook topic, each linking to the relevant product/collection.</div>
+      </div>
+
+      <div class="issue imp">
+        <span class="badge imp">Important</span>
+        <h3>Hard-coded, ever-expiring urgency copy</h3>
+        <p>"The Clarity Starter Bundle" description states "$19.99 until Sunday midnight — then $29.99" as static text baked into the product page. If that deadline isn't actually enforced by an automation, it becomes a false claim every single week the page stays live — a trust and compliance risk, and a quality signal issue if visitors notice the "deadline" never actually arrives.</p>
+        <div class="fix"><b>Fix:</b> Either automate the real price change on that schedule, or remove the specific day/time and use evergreen framing (e.g. "limited-time launch price") that doesn't go stale.</div>
+      </div>
+
+      <div class="issue imp">
+        <span class="badge imp">Important</span>
+        <h3>Repeated boilerplate opening line across most product pages</h3>
+        <p>"Instant digital download. This product is delivered as a PDF file. No physical product will be shipped." appears verbatim as the opening line on 5 of the 8 product pages. Search engines handle small shared boilerplate fine, but it's a missed chance to make each page's opening lines more unique and topic-specific, which helps both SEO relevance and reader engagement.</p>
+        <div class="fix"><b>Fix:</b> Move that trust/format info into a shared visual badge or icon row (like the newer product pages already do), and let the opening paragraph be unique, benefit-led copy instead.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>What's already working well</h2>
+
+      <div class="issue good">
+        <span class="badge good">Good</span>
+        <h3>Every product has a custom, well-sized SEO title and meta description</h3>
+        <p>All 8 active products have unique <code>seo.title</code> and <code>seo.description</code> values, comfortably within Google's practical display limits (titles ~33–46 characters, descriptions ~78–101 characters). That's a solid foundation most new stores skip entirely.</p>
+      </div>
+
+      <div class="issue good">
+        <span class="badge good">Good</span>
+        <h3>Clean, descriptive URL handles</h3>
+        <p>Every product URL is short, hyphenated, and matches the product topic (e.g. <code>/products/the-self-worth-reset</code>) — no auto-generated numeric or junk handles.</p>
+      </div>
+
+      <div class="issue good">
+        <span class="badge good">Good</span>
+        <h3>Consistent structure and semantic headings in product copy</h3>
+        <p>Descriptions use H2/H3 sections ("What's inside", "Who this is for", FAQ blocks) rather than one wall of text — good for readability and a solid base for adding FAQ rich-result markup later.</p>
+      </div>
+
+      <div class="issue good">
+        <span class="badge good">Good</span>
+        <h3>SSL and domain setup look correct</h3>
+        <p>The primary domain (theclarityshop.se) has SSL enabled and is correctly set as the shop's primary domain in Shopify.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Product SEO field snapshot</h2>
+      <table>
+        <thead><tr><th>Product</th><th>SEO title</th><th>Meta description</th><th>Image alt text</th></tr></thead>
+        <tbody>
+          <tr><td>The Situationship Exit Strategy</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Self-Worth Reset</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Money Clarity Reset</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Parenting Reset</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Health &amp; Wellness Reset</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Career &amp; Business Reset</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Clarity Starter Bundle</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+          <tr><td>The Full Clarity Library</td><td>Set ✓</td><td>Set ✓</td><td>Missing ✗</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Could not verify from this session</h2>
+      <div class="note-box">
+        This environment's outbound network access is restricted at the infrastructure level, so requests to <code>theclarityshop.se</code> and even the store's <code>.myshopify.com</code> address were blocked before reaching the site (confirmed as a proxy-level policy denial, not a problem with the store itself). That means the following couldn't be checked directly and should be verified manually:
+      </div>
+      <ul class="tight">
+        <li>Page speed / Core Web Vitals — check with <a href="https://pagespeed.web.dev/" target="_blank" rel="noopener">PageSpeed Insights</a></li>
+        <li>Actual rendered <code>&lt;html lang&gt;</code>, canonical tags, and structured data (Product/FAQ schema) in the live theme</li>
+        <li><code>robots.txt</code> contents and whether anything important is accidentally blocked</li>
+        <li><code>sitemap.xml</code> — Shopify generates this automatically, but worth confirming it's submitted in Google Search Console</li>
+        <li>Whether Google Search Console and Google Analytics are connected and verified for this domain</li>
+        <li>Mobile rendering / usability on the live theme</li>
+      </ul>
+    </section>
+
+    <footer class="footer">
+      <p>Generated from live Shopify Admin data for theclarityshop.se. No changes were made to the live store — this is a read-only audit.</p>
+    </footer>
+  </main>
+</body>
+</html>
